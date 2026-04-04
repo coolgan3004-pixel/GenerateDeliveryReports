@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="GenerateDeliveryReports.Data/GenerateDeliveryReports.Data.csproj" />
+  <Project Path="GenerateDeliveryReports.Models/GenerateDeliveryReports.Models.csproj" />
+  <Project Path="GenerateDeliveryReports/GenerateDeliveryReports.csproj" />
+</Solution>

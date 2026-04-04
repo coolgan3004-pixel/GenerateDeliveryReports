@@ -1,11 +1,11 @@
 using GenerateDeliveryReports.Models;
 
-namespace GenerateDeliveryReports.Services;
+namespace GenerateDeliveryReports.Data.Services;
 
 public interface IReportService
 {
     /// <summary>
-    /// Loads the list of projects from the projects.json configuration file.
+    /// Loads the list of projects from the projectsettings.json configuration file.
     /// </summary>
     Task<List<Project>> GetProjectsAsync();
 
@@ -16,7 +16,7 @@ public interface IReportService
     /// </summary>
     /// <param name="filePath">
     /// File name (or relative path) of the delivery summary file, as specified
-    /// in the projects.json configuration.
+    /// in the projectsettings.json configuration.
     /// </param>
     Task<List<string>> ProcessDeliverySummaryFileAsync(string filePath);
 }

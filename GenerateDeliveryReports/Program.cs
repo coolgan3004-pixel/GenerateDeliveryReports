@@ -1,5 +1,6 @@
 using GenerateDeliveryReports.Components;
-using GenerateDeliveryReports.Services;
+using GenerateDeliveryReports.Data.Services;
+using GenerateDeliveryReports.Data.Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddScoped<ProjectSettingsLoader>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();

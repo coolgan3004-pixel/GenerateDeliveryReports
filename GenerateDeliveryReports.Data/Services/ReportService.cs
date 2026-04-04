@@ -1,41 +1,34 @@
-using System.Text.Json;
+using GenerateDeliveryReports.Data.Settings;
 using GenerateDeliveryReports.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
-namespace GenerateDeliveryReports.Services;
+namespace GenerateDeliveryReports.Data.Services;
 
 public class ReportService : IReportService
 {
     private readonly IWebHostEnvironment _env;
     private readonly IConfiguration _configuration;
     private readonly ILogger<ReportService> _logger;
+    private readonly ProjectSettingsLoader _settingsLoader;
 
     public ReportService(
         IWebHostEnvironment env,
         IConfiguration configuration,
-        ILogger<ReportService> logger)
+        ILogger<ReportService> logger,
+        ProjectSettingsLoader settingsLoader)
     {
         _env = env;
         _configuration = configuration;
         _logger = logger;
+        _settingsLoader = settingsLoader;
     }
 
     /// <inheritdoc />
-    public async Task<List<Project>> GetProjectsAsync()
+    public Task<List<Project>> GetProjectsAsync()
     {
-        var configPath = Path.Combine(_env.ContentRootPath, "Data", "projects.json");
-
-        if (!File.Exists(configPath))
-        {
-            _logger.LogWarning("projects.json not found at {Path}", configPath);
-            return new List<Project>();
-        }
-
-        await using var stream = File.OpenRead(configPath);
-        var config = await JsonSerializer.DeserializeAsync<ProjectsConfig>(
-            stream,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        return config?.Projects ?? new List<Project>();
+        return _settingsLoader.LoadProjectsAsync(_env.ContentRootPath);
     }
 
     /// <inheritdoc />
