@@ -1,0 +1,124 @@
+@page "/generate-report"
+@rendermode InteractiveServer
+@using GenerateDeliveryReports.Models
+@using GenerateDeliveryReports.Services
+@inject IReportService ReportService
+
+<PageTitle>Generate Report</PageTitle>
+
+<h1>Generate Report</h1>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-4">
+                <label for="projectSelect" class="form-label fw-semibold">Application</label>
+                <select id="projectSelect"
+                        class="form-select"
+                        @bind="selectedProjectName"
+                        @bind:after="OnProjectSelectedAsync"
+                        disabled="@isLoadingProjects">
+                    <option value="">-- Select an Application --</option>
+                    @foreach (var project in projects)
+                    {
+                        <option value="@project.Name">@project.Name</option>
+                    }
+                </select>
+                @if (isLoadingProjects)
+                {
+                    <div class="form-text text-muted">
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Loading applications…
+                    </div>
+                }
+            </div>
+
+            <div class="mb-4">
+                <label for="reportItemSelect" class="form-label fw-semibold">Report Item</label>
+                <select id="reportItemSelect"
+                        class="form-select"
+                        @bind="selectedReportItem"
+                        disabled="@(isProcessingFile || !reportItems.Any())">
+                    <option value="">-- Select a Report Item --</option>
+                    @foreach (var item in reportItems)
+                    {
+                        <option value="@item">@item</option>
+                    }
+                </select>
+                @if (isProcessingFile)
+                {
+                    <div class="form-text text-muted">
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        Processing delivery summary file…
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-warning mt-2" role="alert">
+                        @errorMessage
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Project> projects = new();
+    private List<string> reportItems = new();
+
+    private string selectedProjectName = string.Empty;
+    private string selectedReportItem = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private bool isLoadingProjects = false;
+    private bool isProcessingFile = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoadingProjects = true;
+        try
+        {
+            projects = await ReportService.GetProjectsAsync();
+        }
+        finally
+        {
+            isLoadingProjects = false;
+        }
+    }
+
+    private async Task OnProjectSelectedAsync()
+    {
+        reportItems.Clear();
+        selectedReportItem = string.Empty;
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrEmpty(selectedProjectName))
+            return;
+
+        var project = projects.FirstOrDefault(p => p.Name == selectedProjectName);
+        if (project is null)
+            return;
+
+        isProcessingFile = true;
+        try
+        {
+            reportItems = await ReportService.ProcessDeliverySummaryFileAsync(
+                project.DeliverySummaryDataFilePath);
+
+            if (!reportItems.Any())
+            {
+                errorMessage = $"No data found for '{project.Name}'. " +
+                               "Make sure the delivery summary file exists in the Downloads folder.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred while processing the file: {ex.Message}";
+        }
+        finally
+        {
+            isProcessingFile = false;
+        }
+    }
+}

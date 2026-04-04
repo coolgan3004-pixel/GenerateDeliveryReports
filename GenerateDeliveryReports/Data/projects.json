@@ -1,0 +1,16 @@
+{
+  "projects": [
+    {
+      "name": "Alpha Application",
+      "deliverySummaryDataFilePath": "AlphaApp_DeliverySummary.csv"
+    },
+    {
+      "name": "Beta Application",
+      "deliverySummaryDataFilePath": "BetaApp_DeliverySummary.csv"
+    },
+    {
+      "name": "Gamma Application",
+      "deliverySummaryDataFilePath": "GammaApp_DeliverySummary.csv"
+    }
+  ]
+}
