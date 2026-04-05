@@ -2,123 +2,352 @@
 @rendermode InteractiveServer
 @using GenerateDeliveryReports.Models
 @using GenerateDeliveryReports.Data.Services
-@inject IReportService ReportService
+@using GenerateDeliveryReports.Data.Extensions
+@inject SprintReportService Service
 
-<PageTitle>Generate Report</PageTitle>
+<PageTitle>Sprint Report</PageTitle>
 
-<h1>Generate Report</h1>
+<h1 class="mb-4">Sprint Report Generation</h1>
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-6">
-            <div class="mb-4">
-                <label for="projectSelect" class="form-label fw-semibold">Application</label>
-                <select id="projectSelect"
-                        class="form-select"
-                        @bind="selectedProjectName"
-                        @bind:after="OnProjectSelectedAsync"
-                        disabled="@isLoadingProjects">
-                    <option value="">-- Select an Application --</option>
-                    @foreach (var project in projects)
-                    {
-                        <option value="@project.Name">@project.Name</option>
-                    }
-                </select>
-                @if (isLoadingProjects)
+<div class="container-fluid">
+    @* Step 1: Project & Sprint Selection *@
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="projectSelect" class="form-label fw-semibold">Project</label>
+            <select id="projectSelect" class="form-select" @onchange="OnProjectChanged" disabled="@isLoading">
+                <option value="">-- Select a Project --</option>
+                @foreach (var name in projectNames)
                 {
-                    <div class="form-text text-muted">
-                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                        Loading applications…
-                    </div>
+                    <option value="@name">@name</option>
                 }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="sprintSelect" class="form-label fw-semibold">Sprint</label>
+            <select id="sprintSelect" class="form-select" @onchange="OnSprintChanged"
+                    disabled="@(isLoading || sprintNames == null || !sprintNames.Any())">
+                <option value="">-- Select a Sprint --</option>
+                @if (sprintNames != null)
+                {
+                    @foreach (var sprint in sprintNames)
+                    {
+                        <option value="@sprint">@sprint</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex align-items-center my-3">
+            <div class="spinner-border text-primary me-2" role="status"></div>
+            <span>Loading sprint data...</span>
+        </div>
+    }
+
+    @* Step 2: Metrics Data Table *@
+    @if (sprintMetrics != null)
+    {
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Sprint Metrics</div>
+            <div class="card-body table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Sprint</th>
+                            <th>Committed</th>
+                            <th>Delivered</th>
+                            <th>Velocity</th>
+                            <th>Code Coverage</th>
+                            <th>CRC Internal</th>
+                            <th>CRC External</th>
+                            <th>QA Defects</th>
+                            <th>Escaped Defects</th>
+                            <th>Backlog Health</th>
+                            <th>Last Sprint?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@sprintMetrics.Sprint</td>
+                            <td><input type="number" class="form-control form-control-sm" @bind="committedValue" /></td>
+                            <td><input type="number" class="form-control form-control-sm" @bind="deliveredValue" /></td>
+                            <td><input type="number" class="form-control form-control-sm" step="0.01" @bind="velocityValue" /></td>
+                            <td><input type="text" class="form-control form-control-sm" @bind="codeQualityValue" /></td>
+                            <td><input type="number" class="form-control form-control-sm" @bind="crcInternalValue" /></td>
+                            <td><input type="number" class="form-control form-control-sm" @bind="crcExternalValue" /></td>
+                            <td><input type="number" class="form-control form-control-sm" @bind="qaDefectsValue" /></td>
+                            <td><input type="number" class="form-control form-control-sm" @bind="escapedDefectsValue" /></td>
+                            <td><input type="number" class="form-control form-control-sm" @bind="backlogHealthValue" /></td>
+                            <td>
+                                <select class="form-select form-select-sm" @bind="lastSprintValue">
+                                    <option value="No">No</option>
+                                    <option value="Yes">Yes</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+        </div>
+    }
 
-            <div class="mb-4">
-                <label for="reportItemSelect" class="form-label fw-semibold">Report Item</label>
-                <select id="reportItemSelect"
-                        class="form-select"
-                        @bind="selectedReportItem"
-                        disabled="@(isProcessingFile || !reportItems.Any())">
-                    <option value="">-- Select a Report Item --</option>
-                    @foreach (var item in reportItems)
-                    {
-                        <option value="@item">@item</option>
-                    }
-                </select>
-                @if (isProcessingFile)
-                {
-                    <div class="form-text text-muted">
-                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                        Processing delivery summary file…
+    @* Step 3: Chart + Score + Text Fields *@
+    @if (!string.IsNullOrEmpty(chartImageUrl))
+    {
+        <div class="card mb-3">
+            <div class="card-header fw-semibold">Report Data</div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <img src="@chartImageUrl" alt="Sprint Chart" class="img-fluid border" style="max-height:300px;" />
                     </div>
-                }
-                @if (!string.IsNullOrEmpty(errorMessage))
+                    <div class="col-md-2 d-flex align-items-center">
+                        <span class="badge fs-4 p-3 @scoreCssClass">@scoreText</span>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Sprint Delivery Summary</label>
+                        <textarea class="form-control" rows="8" @bind="sprintSummary"></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Sprint Highlights</label>
+                        <textarea class="form-control" rows="8" @bind="sprintHighlights"></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Sprint Retrospective</label>
+                        <textarea class="form-control" rows="8" @bind="sprintRetrospective"></textarea>
+                    </div>
+                </div>
+
+                <button class="btn btn-success" @onclick="GenerateReportClicked" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    }
+                    Generate Report
+                </button>
+            </div>
+        </div>
+    }
+
+    @* Step 4: Download + Email *@
+    @if (!string.IsNullOrEmpty(pdfDownloadUrl))
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <a href="@pdfDownloadUrl" target="_blank" class="btn btn-outline-primary me-2">
+                    View / Download PDF
+                </a>
+                <button class="btn btn-outline-secondary" @onclick="ToggleEmailContent">
+                    @(showEmailContent ? "Hide Email Content" : "Show Email Content")
+                </button>
+
+                @if (showEmailContent)
                 {
-                    <div class="alert alert-warning mt-2" role="alert">
-                        @errorMessage
+                    <div class="mt-3 p-3 border rounded bg-light">
+                        @((MarkupString)emailContent)
                     </div>
                 }
             </div>
         </div>
-    </div>
+    }
+
+    @* Error / status messages *@
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3" role="alert">@errorMessage</div>
+    }
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert alert-success mt-3" role="alert">@statusMessage</div>
+    }
 </div>
 
+<style>
+    .score-green { background-color: #28a745; color: white; }
+    .score-yellow { background-color: #ffc107; color: black; }
+    .score-white { background-color: #f8f9fa; color: black; border: 1px solid #dee2e6; }
+</style>
+
 @code {
-    private List<Project> projects = new();
-    private List<string> reportItems = new();
+    // Selection state
+    private List<string> projectNames = new();
+    private IEnumerable<string>? sprintNames;
+    private string selectedProject = string.Empty;
+    private string selectedSprint = string.Empty;
 
-    private string selectedProjectName = string.Empty;
-    private string selectedReportItem = string.Empty;
+    // Metrics state
+    private SprintMetrics? sprintMetrics;
+    private long committedValue;
+    private long deliveredValue;
+    private double velocityValue;
+    private string codeQualityValue = string.Empty;
+    private int crcInternalValue;
+    private int crcExternalValue;
+    private int qaDefectsValue;
+    private int escapedDefectsValue;
+    private int backlogHealthValue;
+    private string lastSprintValue = "No";
+
+    // Chart/Report state
+    private string chartImageUrl = string.Empty;
+    private string scoreText = string.Empty;
+    private string scoreCssClass = "score-white";
+    private string sprintSummary = string.Empty;
+    private string sprintHighlights = string.Empty;
+    private string sprintRetrospective = string.Empty;
+    private string pdfDownloadUrl = string.Empty;
+
+    // Email state
+    private bool showEmailContent;
+    private string emailContent = string.Empty;
+
+    // UI state
+    private bool isLoading;
     private string errorMessage = string.Empty;
+    private string statusMessage = string.Empty;
 
-    private bool isLoadingProjects = false;
-    private bool isProcessingFile = false;
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        isLoadingProjects = true;
+        projectNames = Service.GetProjectNames().ToList();
+    }
+
+    private void OnProjectChanged(ChangeEventArgs e)
+    {
+        selectedProject = e.Value?.ToString() ?? string.Empty;
+        sprintNames = null;
+        selectedSprint = string.Empty;
+        sprintMetrics = null;
+        chartImageUrl = string.Empty;
+        pdfDownloadUrl = string.Empty;
+        errorMessage = string.Empty;
+        statusMessage = string.Empty;
+
+        if (string.IsNullOrEmpty(selectedProject)) return;
+
         try
         {
-            projects = await ReportService.GetProjectsAsync();
+            sprintNames = Service.GetSprintNames(selectedProject);
         }
-        finally
+        catch (Exception ex)
         {
-            isLoadingProjects = false;
+            errorMessage = $"Error loading sprints: {ex.Message}";
         }
     }
 
-    private async Task OnProjectSelectedAsync()
+    private async Task OnSprintChanged(ChangeEventArgs e)
     {
-        reportItems.Clear();
-        selectedReportItem = string.Empty;
+        selectedSprint = e.Value?.ToString() ?? string.Empty;
+        sprintMetrics = null;
+        chartImageUrl = string.Empty;
+        pdfDownloadUrl = string.Empty;
         errorMessage = string.Empty;
+        statusMessage = string.Empty;
 
-        if (string.IsNullOrEmpty(selectedProjectName))
-            return;
+        if (string.IsNullOrEmpty(selectedSprint)) return;
 
-        var project = projects.FirstOrDefault(p => p.Name == selectedProjectName);
-        if (project is null)
-            return;
+        isLoading = true;
+        StateHasChanged();
 
-        isProcessingFile = true;
         try
         {
-            reportItems = await ReportService.ProcessDeliverySummaryFileAsync(
-                project.DeliverySummaryDataFilePath);
-
-            if (!reportItems.Any())
+            sprintMetrics = await Task.Run(() => Service.GetSprintMetrics(selectedProject, selectedSprint));
+            if (sprintMetrics != null)
             {
-                errorMessage = $"No data found for '{project.Name}'. " +
-                               "Make sure the delivery summary file exists in the Downloads folder.";
+                committedValue = sprintMetrics.Committed.ToLong();
+                deliveredValue = sprintMetrics.Delivered.ToLong();
+                velocityValue = sprintMetrics.Velocity.ToDouble();
+                codeQualityValue = sprintMetrics.CodeQualityIndex.ToEmptyStringIfNull();
+                crcInternalValue = sprintMetrics.CodeReviewCommentsInternal.ToInt();
+                crcExternalValue = sprintMetrics.CodeReviewCommentsExternal.ToInt();
+                qaDefectsValue = sprintMetrics.QADefects.ToInt();
+                escapedDefectsValue = sprintMetrics.EscapedDefects.ToInt();
+                backlogHealthValue = sprintMetrics.BacklogHealth.ToInt();
+                lastSprintValue = sprintMetrics.LastSprint ?? "No";
+
+                var fileName = Path.GetFileName(sprintMetrics.ImagePath);
+            chartImageUrl = $"/downloads/{fileName}?t={DateTime.Now.Ticks}";
+
+            // Score
+            scoreText = sprintMetrics.Score;
+            if (double.TryParse(sprintMetrics.Score, out double scoreVal))
+            {
+                scoreCssClass = scoreVal >= 0.85 ? "score-green"
+                    : scoreVal >= 0.7 ? "score-yellow"
+                    : "score-white";
+                scoreText = $"{scoreVal:P0}";
+            }
+
+            // Pre-fill narrative fields
+            sprintSummary = string.Join("\n", sprintMetrics.SprintSummary?.RemoveEmptyLines() ?? []);
+            sprintHighlights = string.Join("\n", sprintMetrics.SprintHighlights?.RemoveEmptyLines() ?? []);
+            sprintRetrospective = string.Join("\n", sprintMetrics.SprintRetrospective?.RemoveEmptyLines() ?? []);
+
+            statusMessage = "Sprint data loaded successfully."; 
+
+            }
+             // Chart image served from wwwroot/downloads/
+                    }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading metrics: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GenerateReportClicked()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+        statusMessage = string.Empty;
+
+        try
+        {
+            var reportParams = new ReportDataParameters
+            {
+                ProjectName = selectedProject,
+                SprintNameWithDate = selectedSprint,
+                ImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "downloads", Path.GetFileName(chartImageUrl.Split('?')[0])),
+                SprintScore = scoreText,
+                SprintSummary = sprintSummary.Split('\n').RemoveEmptyLines(),
+                SprintHighlights = sprintHighlights.Split('\n').RemoveEmptyLines(),
+                SprintRetrospective = sprintRetrospective.Split('\n').RemoveEmptyLines()
+            };
+
+            var (success, pdfPath) = Service.GeneratePresentation(reportParams);
+            if (success)
+            {
+                var pdfFileName = Path.GetFileName(pdfPath);
+                pdfDownloadUrl = $"/downloads/{pdfFileName}";
+                statusMessage = "Report generated successfully!";
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"An error occurred while processing the file: {ex.Message}";
+            errorMessage = $"Error generating report: {ex.Message}";
         }
         finally
         {
-            isProcessingFile = false;
+            isLoading = false;
+        }
+    }
+
+    private void ToggleEmailContent()
+    {
+        showEmailContent = !showEmailContent;
+        if (showEmailContent)
+        {
+            var sprintName = selectedSprint.Contains('(')
+                ? selectedSprint[..selectedSprint.IndexOf('(')].Trim()
+                : selectedSprint.Trim();
+            emailContent = Service.GetEmailContent(selectedProject, sprintName);
         }
     }
 }

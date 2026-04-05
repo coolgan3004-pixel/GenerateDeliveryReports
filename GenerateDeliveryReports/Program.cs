@@ -1,15 +1,26 @@
 using GenerateDeliveryReports.Components;
+using GenerateDeliveryReports.Data.Concrete;
+using GenerateDeliveryReports.Data.Interface;
 using GenerateDeliveryReports.Data.Services;
-using GenerateDeliveryReports.Data.Settings;
+using GenerateDeliveryReports.Models;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog
+builder.Host.UseSerilog((ctx, cfg) =>
+    cfg.WriteTo.File("LogFiles/log.txt", rollingInterval: RollingInterval.Day));
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddScoped<ProjectSettingsLoader>();
-builder.Services.AddScoped<IReportService, ReportService>();
+// Bind AppSettings from configuration
+builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+
+// Register data layer services
+builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
+builder.Services.AddScoped<SprintReportService>();
 
 var app = builder.Build();
 
