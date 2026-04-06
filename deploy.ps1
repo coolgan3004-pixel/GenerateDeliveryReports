@@ -19,6 +19,25 @@ $ProjectPath = Join-Path $PSScriptRoot "GenerateDeliveryReports\GenerateDelivery
 $PublishDir = Join-Path $PSScriptRoot "publish"
 $TemplateSrc = Join-Path $PSScriptRoot "GenerateDeliveryReports.Data\Templates"
 
+# Locate dotnet.exe
+$dotnetCmd = Get-Command dotnet -ErrorAction SilentlyContinue
+if (-not $dotnetCmd) {
+    $defaultPaths = @(
+        "$env:ProgramFiles\dotnet\dotnet.exe",
+        "${env:ProgramFiles(x86)}\dotnet\dotnet.exe",
+        "$env:LOCALAPPDATA\Microsoft\dotnet\dotnet.exe"
+    )
+    foreach ($p in $defaultPaths) {
+        if (Test-Path $p) { $dotnetCmd = $p; break }
+    }
+    if (-not $dotnetCmd) {
+        Write-Host "ERROR: 'dotnet' not found. Install .NET SDK or add it to PATH." -ForegroundColor Red
+        exit 1
+    }
+}
+$dotnet = if ($dotnetCmd -is [string]) { $dotnetCmd } else { $dotnetCmd.Source }
+Write-Host "Using dotnet: $dotnet" -ForegroundColor Gray
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host " GenerateDeliveryReports - Deploy Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
@@ -31,7 +50,7 @@ if (Test-Path $PublishDir) {
 
 # Step 2: Publish self-contained
 Write-Host "`n[2/5] Publishing ($Configuration | $Runtime | self-contained)..." -ForegroundColor Yellow
-dotnet publish $ProjectPath -c $Configuration -r $Runtime --self-contained -o $PublishDir
+& $dotnet publish $ProjectPath -c $Configuration -r $Runtime --self-contained -o $PublishDir
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Publish failed." -ForegroundColor Red
     exit 1
