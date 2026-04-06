@@ -3,6 +3,7 @@ using GenerateDeliveryReports.Data.Concrete;
 using GenerateDeliveryReports.Data.Interface;
 using GenerateDeliveryReports.Data.Services;
 using GenerateDeliveryReports.Models;
+using Microsoft.Extensions.FileProviders;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -36,7 +37,17 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
-app.UseStaticFiles();
+// Serve dynamically generated files (chart images, PDFs) from wwwroot/downloads
+var downloadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "downloads");
+if (!Directory.Exists(downloadsPath))
+    Directory.CreateDirectory(downloadsPath);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(downloadsPath),
+    RequestPath = "/downloads"
+});
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
