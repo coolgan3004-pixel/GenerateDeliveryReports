@@ -1521,3 +1521,143 @@ System.Exception: [ERR_100] Data file not found at the configured path: Projects
 2026-04-05 16:43:25.850 -04:00 [INF] Executed endpoint '/not-found (/not-found)'
 2026-04-05 16:43:25.851 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/favicon.ico - 404 null text/html; charset=utf-8 39.7269ms
 2026-04-05 16:43:25.852 -04:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5158/favicon.ico, Response status code: 404
+2026-04-05 18:44:06.878 -04:00 [INF] User profile is available. Using 'C:\Users\Ganapathiraman.b\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-05 18:44:07.342 -04:00 [INF] Now listening on: http://localhost:5158
+2026-04-05 18:44:07.346 -04:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-05 18:44:07.346 -04:00 [INF] Hosting environment: Development
+2026-04-05 18:44:07.346 -04:00 [INF] Content root path: C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports
+2026-04-05 18:44:14.863 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-05 18:44:14.923 -04:00 [WRN] Failed to determine the https port for redirect.
+2026-04-05 18:44:14.925 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:14.935 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:14.936 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 75.2269ms
+2026-04-05 18:44:14.942 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=zBnkqMbH-zQkUAq3imHuMA - null null
+2026-04-05 18:44:14.947 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.022 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/generate-report - null null
+2026-04-05 18:44:15.023 -04:00 [INF] Executing endpoint '/generate-report (/generate-report)'
+2026-04-05 18:44:15.240 -04:00 [INF] Executed endpoint '/generate-report (/generate-report)'
+2026-04-05 18:44:15.242 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/generate-report - 200 null text/html; charset=utf-8 220.2314ms
+2026-04-05 18:44:15.249 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - multipart/form-data; boundary=----WebKitFormBoundaryP3bap27aRwCDYH33 359
+2026-04-05 18:44:15.252 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.270 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - null null
+2026-04-05 18:44:15.273 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - null null
+2026-04-05 18:44:15.273 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - null null
+2026-04-05 18:44:15.282 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.282 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.282 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.283 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.290 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor?id=zBnkqMbH-zQkUAq3imHuMA - 101 null null 348.4587ms
+2026-04-05 18:44:15.295 -04:00 [INF] The file _framework/blazor.web.b9228eflpl.js was not modified
+2026-04-05 18:44:15.308 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.308 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - 304 null text/javascript 34.5405ms
+2026-04-05 18:44:15.309 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - null null
+2026-04-05 18:44:15.309 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.318 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.319 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - 200 0 null 69.2911ms
+2026-04-05 18:44:15.319 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - null null
+2026-04-05 18:44:15.319 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.344 -04:00 [INF] Sending file. Request path: 'GenerateDeliveryReports.mtho8tbprw.styles.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\pawf40ybj4-{0}-mtho8tbprw-mtho8tbprw.gz'
+2026-04-05 18:44:15.344 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.344 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - 200 10360 text/css 24.846ms
+2026-04-05 18:44:15.344 -04:00 [INF] Sending file. Request path: 'app.khy4lop6wu.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\hyls6t601g-{0}-khy4lop6wu-khy4lop6wu.gz'
+2026-04-05 18:44:15.344 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.344 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - 200 2933 text/css 70.7167ms
+2026-04-05 18:44:15.348 -04:00 [INF] Sending file. Request path: 'Components/Layout/ReconnectModal.abdmv1u4y3.razor.js'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\a114j2f7sq-{0}-abdmv1u4y3-abdmv1u4y3.gz'
+2026-04-05 18:44:15.348 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.348 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - 200 2481 text/javascript 39.077ms
+2026-04-05 18:44:15.355 -04:00 [INF] Sending file. Request path: 'lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\6j5vh331n7-{0}-43atpzeawx-43atpzeawx.gz'
+2026-04-05 18:44:15.356 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.356 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - 200 232876 text/css 86.6291ms
+2026-04-05 18:44:15.410 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor/initializers - null null
+2026-04-05 18:44:15.411 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.412 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/favicon.png - null null
+2026-04-05 18:44:15.413 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.413 -04:00 [INF] The file favicon.png was not modified
+2026-04-05 18:44:15.413 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.413 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/favicon.png - 304 null image/png 1.3174ms
+2026-04-05 18:44:15.420 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.420 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor/initializers - 200 null application/json; charset=utf-8 10.1401ms
+2026-04-05 18:44:15.425 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-05 18:44:15.425 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.426 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:15.426 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.5701ms
+2026-04-05 18:44:15.429 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=rs2Ei0VxGU9Req9TbjbPjg - null null
+2026-04-05 18:44:15.429 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-05 18:44:18.093 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:18.096 -04:00 [INF] GetSprintNames - Opening file: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:18.653 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:18.654 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:19.250 -04:00 [INF] GetReportDataForProject - Rows read: 10
+2026-04-05 18:44:19.266 -04:00 [INF] GetSprintNames - Report data rows: 10
+2026-04-05 18:44:19.267 -04:00 [INF] GetSprintNames - Sprint names found: 9
+2026-04-05 18:44:24.656 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\MSB Activities\GlobalPayments-MSB Activities_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:24.657 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\MSB Activities\GlobalPayments-MSB Activities_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:24.681 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Activities\GlobalPayments-MSB Activities_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Activities\GlobalPayments-MSB Activities_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:29.793 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\MCS\GlobalPayments-MCS_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:29.793 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\MCS\GlobalPayments-MCS_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:29.814 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MCS\GlobalPayments-MCS_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MCS\GlobalPayments-MCS_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:33.533 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\MSB Dev Services\GlobalPayments-MSB DevServices_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:33.533 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\MSB Dev Services\GlobalPayments-MSB DevServices_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:33.549 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Dev Services\GlobalPayments-MSB DevServices_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Dev Services\GlobalPayments-MSB DevServices_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:36.454 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\MSB Web US\GlobalPayments-MSB Web US_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:36.455 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\MSB Web US\GlobalPayments-MSB Web US_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:36.475 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Web US\GlobalPayments-MSB Web US_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Web US\GlobalPayments-MSB Web US_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:39.123 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\FOH\GlobalPayments-FOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:39.123 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\FOH\GlobalPayments-FOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:39.138 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\FOH\GlobalPayments-FOH_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\FOH\GlobalPayments-FOH_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:43.238 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\GGO Mobile\GlobalPayments-GGO Mobile_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:43.238 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\GGO Mobile\GlobalPayments-GGO Mobile_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:43.257 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\GGO Mobile\GlobalPayments-GGO Mobile_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\GGO Mobile\GlobalPayments-GGO Mobile_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:46.174 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\GGO OnlineBidding\GlobalPayments-GGO OnlineBidding_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:46.175 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\GGO OnlineBidding\GlobalPayments-GGO OnlineBidding_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:46.196 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\GGO OnlineBidding\GlobalPayments-GGO OnlineBidding_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\GGO OnlineBidding\GlobalPayments-GGO OnlineBidding_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:48.873 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\GGO Web\GlobalPayments-GGO Web_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:48.874 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\GGO Web\GlobalPayments-GGO Web_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:48.888 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\GGO Web\GlobalPayments-GGO Web_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\GGO Web\GlobalPayments-GGO Web_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:51.763 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\MSB Mobile\GlobalPayments-MSB Mobile_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:51.764 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\MSB Mobile\GlobalPayments-MSB Mobile_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:51.784 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Mobile\GlobalPayments-MSB Mobile_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Mobile\GlobalPayments-MSB Mobile_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:54.667 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\Meal Orders US\GlobalPayments-MealOrders-US_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:54.667 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\Meal Orders US\GlobalPayments-MealOrders-US_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:54.685 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\Meal Orders US\GlobalPayments-MealOrders-US_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\Meal Orders US\GlobalPayments-MealOrders-US_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:44:57.320 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\MSB Kaleida\GlobalPayments-MSB Kaleida_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:57.321 -04:00 [WRN] GetSprintNames - File.Exists returned false for: C:\Repository\OneDrive Test\Projects\MSB Kaleida\GlobalPayments-MSB Kaleida_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:44:57.336 -04:00 [ERR] GetSprintNames failed: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Kaleida\GlobalPayments-MSB Kaleida_DeliveryQualitySummaryReport.xlsx
+System.Exception: [ERR_100] Data file not found at the configured path: C:\Repository\OneDrive Test\Projects\MSB Kaleida\GlobalPayments-MSB Kaleida_DeliveryQualitySummaryReport.xlsx
+   at GenerateDeliveryReports.Data.Concrete.DataProcessor.GetSprintNames(String projectName) in C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports.Data\Concrete\DataProcessor.cs:line 58
+2026-04-05 18:45:02.720 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:45:02.723 -04:00 [INF] GetSprintNames - Opening file: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:45:02.749 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:45:02.749 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:45:03.025 -04:00 [INF] GetReportDataForProject - Rows read: 10
+2026-04-05 18:45:03.042 -04:00 [INF] GetSprintNames - Report data rows: 10
+2026-04-05 18:45:03.042 -04:00 [INF] GetSprintNames - Sprint names found: 9
+2026-04-05 18:45:09.004 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:45:09.004 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-05 18:45:09.294 -04:00 [INF] GetReportDataForProject - Rows read: 10
+2026-04-05 18:45:15.592 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/downloads/BOH.png?t=639110115155837209 - null null
+2026-04-05 18:45:15.600 -04:00 [INF] Executing endpoint 'Fallback {**path:file}'
+2026-04-05 18:45:15.600 -04:00 [WRN] The static asset '/downloads/BOH.png' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-04-05 18:45:15.606 -04:00 [INF] Sending file. Request path: '/downloads/BOH.png'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\wwwroot\downloads\BOH.png'
+2026-04-05 18:45:15.606 -04:00 [INF] Executed endpoint 'Fallback {**path:file}'
+2026-04-05 18:45:15.607 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/downloads/BOH.png?t=639110115155837209 - 200 14878 image/png 14.3405ms
