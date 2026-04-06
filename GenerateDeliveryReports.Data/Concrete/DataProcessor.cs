@@ -175,6 +175,8 @@ public class DataProcessor : IDataProcessor
                 _appSettings.Projects.Single(x => x.ProjectName == projectName).DataFileName))!,
             $"GlobalPayments-{projectName}-DeliveryQualitySummaryReport-{sprintNameFormatted}.pptx");
 
+        sprintMetrics.OutputPPTPath = outputPPTPath;
+
         if (File.Exists(outputPPTPath))
         {
             presentation.LoadFromFile(outputPPTPath);

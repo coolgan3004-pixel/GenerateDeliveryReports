@@ -287,7 +287,7 @@
             sprintHighlights = string.Join("\n", sprintMetrics.SprintHighlights?.RemoveEmptyLines() ?? []);
             sprintRetrospective = string.Join("\n", sprintMetrics.SprintRetrospective?.RemoveEmptyLines() ?? []);
 
-            statusMessage = "Sprint data loaded successfully."; 
+            statusMessage = $"Sprint data loaded successfully. Report path: {sprintMetrics.OutputPPTPath}"; 
 
             }
              // Chart image served from wwwroot/downloads/

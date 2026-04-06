@@ -17,6 +17,7 @@ public class SprintMetrics
     public object? Remarks { get; set; }
 
      public string ImagePath { get; set; } = string.Empty;
+    public string OutputPPTPath { get; set; } = string.Empty;
     public string Score { get; set; } = string.Empty;
     public string[]? SprintSummary { get; set; }
     public string[]? SprintHighlights { get; set; }
