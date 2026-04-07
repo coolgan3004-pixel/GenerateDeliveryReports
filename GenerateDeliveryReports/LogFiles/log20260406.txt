@@ -1,0 +1,360 @@
+2026-04-06 22:35:34.714 -04:00 [INF] User profile is available. Using 'C:\Users\Ganapathiraman.b\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 22:35:35.206 -04:00 [INF] Now listening on: http://localhost:5158
+2026-04-06 22:35:35.211 -04:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-06 22:35:35.211 -04:00 [INF] Hosting environment: Development
+2026-04-06 22:35:35.212 -04:00 [INF] Content root path: C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports
+2026-04-06 22:36:23.472 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/generate-report - null null
+2026-04-06 22:36:23.590 -04:00 [WRN] Failed to determine the https port for redirect.
+2026-04-06 22:36:23.594 -04:00 [INF] Executing endpoint '/generate-report (/generate-report)'
+2026-04-06 22:36:24.070 -04:00 [INF] Executed endpoint '/generate-report (/generate-report)'
+2026-04-06 22:36:24.074 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/generate-report - 200 null text/html; charset=utf-8 605.956ms
+2026-04-06 22:36:24.105 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - null null
+2026-04-06 22:36:24.106 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - null null
+2026-04-06 22:36:24.124 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - null null
+2026-04-06 22:36:24.124 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - null null
+2026-04-06 22:36:24.129 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.129 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.129 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.129 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.172 -04:00 [INF] The file _framework/blazor.web.b9228eflpl.js was not modified
+2026-04-06 22:36:24.173 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.173 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - 304 null text/javascript 49.0998ms
+2026-04-06 22:36:24.174 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - null null
+2026-04-06 22:36:24.181 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.222 -04:00 [INF] Sending file. Request path: 'Components/Layout/ReconnectModal.abdmv1u4y3.razor.js'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\a114j2f7sq-{0}-abdmv1u4y3-abdmv1u4y3.gz'
+2026-04-06 22:36:24.222 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.222 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - 200 2481 text/javascript 98.107ms
+2026-04-06 22:36:24.222 -04:00 [INF] Sending file. Request path: 'GenerateDeliveryReports.mtho8tbprw.styles.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\pawf40ybj4-{0}-mtho8tbprw-mtho8tbprw.gz'
+2026-04-06 22:36:24.223 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.223 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - 200 10360 text/css 118.8741ms
+2026-04-06 22:36:24.226 -04:00 [INF] Sending file. Request path: 'app.khy4lop6wu.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\hyls6t601g-{0}-khy4lop6wu-khy4lop6wu.gz'
+2026-04-06 22:36:24.227 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.227 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - 200 2933 text/css 120.8845ms
+2026-04-06 22:36:24.279 -04:00 [INF] Sending file. Request path: 'lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\6j5vh331n7-{0}-43atpzeawx-43atpzeawx.gz'
+2026-04-06 22:36:24.282 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.288 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - 200 232876 text/css 113.2297ms
+2026-04-06 22:36:24.338 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor/initializers - null null
+2026-04-06 22:36:24.339 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.348 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.348 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor/initializers - 200 null application/json; charset=utf-8 9.9421ms
+2026-04-06 22:36:24.353 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:36:24.354 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.374 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:24.374 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 21.0651ms
+2026-04-06 22:36:24.377 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=3uJctQPV3jCSbCLfvMj1Mw - null null
+2026-04-06 22:36:24.377 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:36:28.004 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:36:28.007 -04:00 [INF] GetSprintNames - Opening file: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:36:28.618 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:36:28.618 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:36:29.210 -04:00 [INF] GetReportDataForProject - Rows read: 10
+2026-04-06 22:36:29.228 -04:00 [INF] GetSprintNames - Report data rows: 10
+2026-04-06 22:36:29.229 -04:00 [INF] GetSprintNames - Sprint names found: 9
+2026-04-06 22:36:47.976 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:36:47.977 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:37:17.527 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:37:17.527 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:37:17.527 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:37:17.527 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 45.9583ms
+2026-04-06 22:37:17.543 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:37:17.544 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor?id=3uJctQPV3jCSbCLfvMj1Mw - 101 null null 53166.0394ms
+2026-04-06 22:37:17.547 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=BvihmKEtwDkYTzZCe75Ogg - null null
+2026-04-06 22:37:17.547 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:38:06.713 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:38:10.484 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:38:56.695 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:38:56.696 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:38:56.697 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:38:56.697 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 1.6449ms
+2026-04-06 22:38:56.701 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:38:56.701 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor?id=BvihmKEtwDkYTzZCe75Ogg - 101 null null 99153.8837ms
+2026-04-06 22:38:56.708 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=4Vo8CGd0RhEmgGo97HH4wA - null null
+2026-04-06 22:38:56.708 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:06.445 -04:00 [INF] User profile is available. Using 'C:\Users\Ganapathiraman.b\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 22:44:06.952 -04:00 [INF] Now listening on: http://localhost:5158
+2026-04-06 22:44:06.959 -04:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-06 22:44:06.959 -04:00 [INF] Hosting environment: Development
+2026-04-06 22:44:06.959 -04:00 [INF] Content root path: C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports
+2026-04-06 22:44:07.076 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:44:07.145 -04:00 [WRN] Failed to determine the https port for redirect.
+2026-04-06 22:44:07.150 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.170 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.171 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 97.1718ms
+2026-04-06 22:44:07.178 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=y4An1hSfuvI1IBE0piZblA - null null
+2026-04-06 22:44:07.186 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.347 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/generate-report - null null
+2026-04-06 22:44:07.348 -04:00 [INF] Executing endpoint '/generate-report (/generate-report)'
+2026-04-06 22:44:07.731 -04:00 [INF] Executed endpoint '/generate-report (/generate-report)'
+2026-04-06 22:44:07.734 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/generate-report - 200 null text/html; charset=utf-8 386.8662ms
+2026-04-06 22:44:07.761 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - multipart/form-data; boundary=----WebKitFormBoundaryiopAgQ1fB77Fg9b7 359
+2026-04-06 22:44:07.762 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.771 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - null null
+2026-04-06 22:44:07.776 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.797 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - null null
+2026-04-06 22:44:07.798 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.814 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.814 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - 200 0 null 53.0869ms
+2026-04-06 22:44:07.825 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.828 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor?id=y4An1hSfuvI1IBE0piZblA - 101 null null 651.5685ms
+2026-04-06 22:44:07.854 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - null null
+2026-04-06 22:44:07.854 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.859 -04:00 [INF] Sending file. Request path: 'GenerateDeliveryReports.mtho8tbprw.styles.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\pawf40ybj4-{0}-mtho8tbprw-mtho8tbprw.gz'
+2026-04-06 22:44:07.859 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.859 -04:00 [INF] Sending file. Request path: 'lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\6j5vh331n7-{0}-43atpzeawx-43atpzeawx.gz'
+2026-04-06 22:44:07.859 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.859 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - 200 10360 text/css 61.8514ms
+2026-04-06 22:44:07.859 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - 200 232876 text/css 88.1085ms
+2026-04-06 22:44:07.883 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - null null
+2026-04-06 22:44:07.883 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.889 -04:00 [INF] Sending file. Request path: 'app.khy4lop6wu.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\hyls6t601g-{0}-khy4lop6wu-khy4lop6wu.gz'
+2026-04-06 22:44:07.889 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.889 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - 200 2933 text/css 35.4086ms
+2026-04-06 22:44:07.890 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - null null
+2026-04-06 22:44:07.891 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.891 -04:00 [INF] The file _framework/blazor.web.b9228eflpl.js was not modified
+2026-04-06 22:44:07.891 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.892 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - 304 null text/javascript 1.4187ms
+2026-04-06 22:44:07.938 -04:00 [INF] Sending file. Request path: 'Components/Layout/ReconnectModal.abdmv1u4y3.razor.js'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\a114j2f7sq-{0}-abdmv1u4y3-abdmv1u4y3.gz'
+2026-04-06 22:44:07.939 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.939 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - 200 2481 text/javascript 55.6311ms
+2026-04-06 22:44:07.947 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor/initializers - null null
+2026-04-06 22:44:07.947 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.953 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:07.953 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor/initializers - 200 null application/json; charset=utf-8 6.5976ms
+2026-04-06 22:44:08.016 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:44:08.016 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:08.016 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:08.016 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.7104ms
+2026-04-06 22:44:08.038 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/favicon.png - null null
+2026-04-06 22:44:08.039 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:08.039 -04:00 [INF] The file favicon.png was not modified
+2026-04-06 22:44:08.040 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:44:08.040 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/favicon.png - 304 null image/png 1.1918ms
+2026-04-06 22:44:08.044 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=HSoUMrJWskLtv5kzuaYdVA - null null
+2026-04-06 22:44:08.044 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:06.461 -04:00 [INF] User profile is available. Using 'C:\Users\Ganapathiraman.b\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 22:51:07.862 -04:00 [INF] Now listening on: http://localhost:5158
+2026-04-06 22:51:07.871 -04:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-06 22:51:07.872 -04:00 [INF] Hosting environment: Development
+2026-04-06 22:51:07.872 -04:00 [INF] Content root path: C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports
+2026-04-06 22:51:17.438 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:51:17.533 -04:00 [WRN] Failed to determine the https port for redirect.
+2026-04-06 22:51:17.536 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:17.552 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:17.553 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 117.4915ms
+2026-04-06 22:51:17.559 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=bMXC2enxm9ZmMGlnEvygEA - null null
+2026-04-06 22:51:17.568 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:17.693 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/generate-report - null null
+2026-04-06 22:51:17.694 -04:00 [INF] Executing endpoint '/generate-report (/generate-report)'
+2026-04-06 22:51:17.978 -04:00 [INF] Executed endpoint '/generate-report (/generate-report)'
+2026-04-06 22:51:17.981 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/generate-report - 200 null text/html; charset=utf-8 288.0734ms
+2026-04-06 22:51:17.986 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - multipart/form-data; boundary=----WebKitFormBoundary1IsSjTG7YeCst4SY 359
+2026-04-06 22:51:18.004 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.019 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - null null
+2026-04-06 22:51:18.021 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - null null
+2026-04-06 22:51:18.023 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.040 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor?id=bMXC2enxm9ZmMGlnEvygEA - 101 null null 481.6757ms
+2026-04-06 22:51:18.049 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - null null
+2026-04-06 22:51:18.052 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.068 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.068 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.068 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - 200 0 null 81.637ms
+2026-04-06 22:51:18.077 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.124 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - null null
+2026-04-06 22:51:18.124 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.141 -04:00 [INF] Sending file. Request path: 'GenerateDeliveryReports.mtho8tbprw.styles.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\pawf40ybj4-{0}-mtho8tbprw-mtho8tbprw.gz'
+2026-04-06 22:51:18.141 -04:00 [INF] Sending file. Request path: 'app.khy4lop6wu.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\hyls6t601g-{0}-khy4lop6wu-khy4lop6wu.gz'
+2026-04-06 22:51:18.141 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.141 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.141 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - 200 2933 text/css 119.5131ms
+2026-04-06 22:51:18.141 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - 200 10360 text/css 91.7197ms
+2026-04-06 22:51:18.141 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - null null
+2026-04-06 22:51:18.141 -04:00 [INF] Sending file. Request path: 'Components/Layout/ReconnectModal.abdmv1u4y3.razor.js'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\a114j2f7sq-{0}-abdmv1u4y3-abdmv1u4y3.gz'
+2026-04-06 22:51:18.141 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.142 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - 200 2481 text/javascript 17.995ms
+2026-04-06 22:51:18.147 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.148 -04:00 [INF] The file _framework/blazor.web.b9228eflpl.js was not modified
+2026-04-06 22:51:18.148 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.148 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - 304 null text/javascript 6.5784ms
+2026-04-06 22:51:18.160 -04:00 [INF] Sending file. Request path: 'lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\6j5vh331n7-{0}-43atpzeawx-43atpzeawx.gz'
+2026-04-06 22:51:18.161 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.161 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - 200 232876 text/css 142.1345ms
+2026-04-06 22:51:18.222 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor/initializers - null null
+2026-04-06 22:51:18.227 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.228 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/favicon.png - null null
+2026-04-06 22:51:18.229 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.229 -04:00 [INF] The file favicon.png was not modified
+2026-04-06 22:51:18.229 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.229 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/favicon.png - 304 null image/png 1.1914ms
+2026-04-06 22:51:18.238 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.238 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor/initializers - 200 null application/json; charset=utf-8 15.9847ms
+2026-04-06 22:51:18.241 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:51:18.242 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.242 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:18.242 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.6567ms
+2026-04-06 22:51:18.245 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=DrPIcvet-CIjd3pHSnntbw - null null
+2026-04-06 22:51:18.245 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:51:20.565 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:51:20.570 -04:00 [INF] GetSprintNames - Opening file: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:51:21.499 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:51:21.500 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:51:22.262 -04:00 [INF] GetReportDataForProject - Rows read: 10
+2026-04-06 22:51:22.279 -04:00 [INF] GetSprintNames - Report data rows: 10
+2026-04-06 22:51:22.280 -04:00 [INF] GetSprintNames - Sprint names found: 9
+2026-04-06 22:51:24.849 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Global Payments\GP_Sprint Metrics - Team\Mosaic BOH\BOH - Sprint Metrics.xlsx
+2026-04-06 22:51:24.850 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Global Payments\GP_Sprint Metrics - Team\Mosaic BOH\BOH - Sprint Metrics.xlsx
+2026-04-06 22:58:54.193 -04:00 [INF] User profile is available. Using 'C:\Users\Ganapathiraman.b\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 22:58:54.628 -04:00 [INF] Now listening on: http://localhost:5158
+2026-04-06 22:58:54.633 -04:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-06 22:58:54.634 -04:00 [INF] Hosting environment: Development
+2026-04-06 22:58:54.634 -04:00 [INF] Content root path: C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports
+2026-04-06 22:59:06.381 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:59:06.472 -04:00 [WRN] Failed to determine the https port for redirect.
+2026-04-06 22:59:06.475 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.486 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.486 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 107.7916ms
+2026-04-06 22:59:06.494 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=pFdIAh5k70DrKKZaZtRvMg - null null
+2026-04-06 22:59:06.501 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.575 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/generate-report - null null
+2026-04-06 22:59:06.576 -04:00 [INF] Executing endpoint '/generate-report (/generate-report)'
+2026-04-06 22:59:06.829 -04:00 [INF] Executed endpoint '/generate-report (/generate-report)'
+2026-04-06 22:59:06.832 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/generate-report - 200 null text/html; charset=utf-8 256.7392ms
+2026-04-06 22:59:06.837 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - multipart/form-data; boundary=----WebKitFormBoundaryBXGi5Sr2B292bd9P 359
+2026-04-06 22:59:06.838 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.849 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - null null
+2026-04-06 22:59:06.853 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - null null
+2026-04-06 22:59:06.858 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - null null
+2026-04-06 22:59:06.859 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.861 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.862 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.882 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - null null
+2026-04-06 22:59:06.883 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.888 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.888 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - 200 0 null 51.9073ms
+2026-04-06 22:59:06.895 -04:00 [INF] Sending file. Request path: 'GenerateDeliveryReports.mtho8tbprw.styles.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\pawf40ybj4-{0}-mtho8tbprw-mtho8tbprw.gz'
+2026-04-06 22:59:06.895 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.895 -04:00 [INF] Sending file. Request path: 'Components/Layout/ReconnectModal.abdmv1u4y3.razor.js'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\a114j2f7sq-{0}-abdmv1u4y3-abdmv1u4y3.gz'
+2026-04-06 22:59:06.895 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.896 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - 200 10360 text/css 37.2758ms
+2026-04-06 22:59:06.896 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - 200 2481 text/javascript 13.1208ms
+2026-04-06 22:59:06.896 -04:00 [INF] Sending file. Request path: 'app.khy4lop6wu.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\hyls6t601g-{0}-khy4lop6wu-khy4lop6wu.gz'
+2026-04-06 22:59:06.896 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.896 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - 200 2933 text/css 42.5177ms
+2026-04-06 22:59:06.896 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - null null
+2026-04-06 22:59:06.896 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.897 -04:00 [INF] The file _framework/blazor.web.b9228eflpl.js was not modified
+2026-04-06 22:59:06.898 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.898 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - 304 null text/javascript 2.5434ms
+2026-04-06 22:59:06.910 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.912 -04:00 [INF] Sending file. Request path: 'lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\6j5vh331n7-{0}-43atpzeawx-43atpzeawx.gz'
+2026-04-06 22:59:06.913 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.913 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor?id=pFdIAh5k70DrKKZaZtRvMg - 101 null null 419.609ms
+2026-04-06 22:59:06.913 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - 200 232876 text/css 64.1914ms
+2026-04-06 22:59:06.936 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor/initializers - null null
+2026-04-06 22:59:06.936 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.937 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/favicon.png - null null
+2026-04-06 22:59:06.937 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.937 -04:00 [INF] The file favicon.png was not modified
+2026-04-06 22:59:06.937 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.937 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/favicon.png - 304 null image/png 0.8847ms
+2026-04-06 22:59:06.945 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.945 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor/initializers - 200 null application/json; charset=utf-8 9.8704ms
+2026-04-06 22:59:06.958 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 22:59:06.958 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.958 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:06.958 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 5.5554ms
+2026-04-06 22:59:06.963 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=7VWtHyiHjYricU4QAMRAIw - null null
+2026-04-06 22:59:06.963 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 22:59:08.650 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:59:08.655 -04:00 [INF] GetSprintNames - Opening file: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:59:08.756 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:59:08.757 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 22:59:09.373 -04:00 [INF] GetReportDataForProject - Rows read: 10
+2026-04-06 22:59:09.389 -04:00 [INF] GetSprintNames - Report data rows: 10
+2026-04-06 22:59:09.390 -04:00 [INF] GetSprintNames - Sprint names found: 9
+2026-04-06 22:59:11.163 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Global Payments\GP_Sprint Metrics - Team\Mosaic BOH\BOH - Sprint Metrics.xlsx
+2026-04-06 22:59:11.164 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Global Payments\GP_Sprint Metrics - Team\Mosaic BOH\BOH - Sprint Metrics.xlsx
+2026-04-06 22:59:44.936 -04:00 [INF] GetReportDataForProject - Rows read: 88
+2026-04-06 23:11:07.372 -04:00 [INF] User profile is available. Using 'C:\Users\Ganapathiraman.b\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-04-06 23:11:08.854 -04:00 [INF] Now listening on: http://localhost:5158
+2026-04-06 23:11:08.859 -04:00 [INF] Application started. Press Ctrl+C to shut down.
+2026-04-06 23:11:08.860 -04:00 [INF] Hosting environment: Development
+2026-04-06 23:11:08.860 -04:00 [INF] Content root path: C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports
+2026-04-06 23:11:15.273 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 23:11:15.329 -04:00 [WRN] Failed to determine the https port for redirect.
+2026-04-06 23:11:15.332 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.343 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.344 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 74.517ms
+2026-04-06 23:11:15.351 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=F-c3_aqAtEyCoPz3h0PsfQ - null null
+2026-04-06 23:11:15.357 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.437 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/generate-report - null null
+2026-04-06 23:11:15.438 -04:00 [INF] Executing endpoint '/generate-report (/generate-report)'
+2026-04-06 23:11:15.654 -04:00 [INF] Executed endpoint '/generate-report (/generate-report)'
+2026-04-06 23:11:15.657 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/generate-report - 200 null text/html; charset=utf-8 219.8517ms
+2026-04-06 23:11:15.684 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - multipart/form-data; boundary=----WebKitFormBoundary0MkeLyg3xHKuqkS1 359
+2026-04-06 23:11:15.685 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.695 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - null null
+2026-04-06 23:11:15.699 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - null null
+2026-04-06 23:11:15.701 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.702 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.702 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/disconnect - 200 0 null 18.6954ms
+2026-04-06 23:11:15.703 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - null null
+2026-04-06 23:11:15.703 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.704 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.706 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor?id=F-c3_aqAtEyCoPz3h0PsfQ - 101 null null 355.3393ms
+2026-04-06 23:11:15.707 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.714 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - null null
+2026-04-06 23:11:15.714 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.717 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - null null
+2026-04-06 23:11:15.717 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.719 -04:00 [INF] The file _framework/blazor.web.b9228eflpl.js was not modified
+2026-04-06 23:11:15.719 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.719 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_framework/blazor.web.b9228eflpl.js - 304 null text/javascript 2.349ms
+2026-04-06 23:11:15.730 -04:00 [INF] Sending file. Request path: 'Components/Layout/ReconnectModal.abdmv1u4y3.razor.js'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\a114j2f7sq-{0}-abdmv1u4y3-abdmv1u4y3.gz'
+2026-04-06 23:11:15.730 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.730 -04:00 [INF] Sending file. Request path: 'app.khy4lop6wu.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\hyls6t601g-{0}-khy4lop6wu-khy4lop6wu.gz'
+2026-04-06 23:11:15.730 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/Components/Layout/ReconnectModal.abdmv1u4y3.razor.js - 200 2481 text/javascript 16.1089ms
+2026-04-06 23:11:15.730 -04:00 [INF] Sending file. Request path: 'GenerateDeliveryReports.mtho8tbprw.styles.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\pawf40ybj4-{0}-mtho8tbprw-mtho8tbprw.gz'
+2026-04-06 23:11:15.730 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.730 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/GenerateDeliveryReports.mtho8tbprw.styles.css - 200 10360 text/css 27.5092ms
+2026-04-06 23:11:15.730 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.731 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/app.khy4lop6wu.css - 200 2933 text/css 31.6132ms
+2026-04-06 23:11:15.738 -04:00 [INF] Sending file. Request path: 'lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css'. Physical path: 'C:\Repository\GenerateDeliveryReports\GenerateDeligeryReports\GenerateDeliveryReports\obj\Debug\net10.0\compressed\6j5vh331n7-{0}-43atpzeawx-43atpzeawx.gz'
+2026-04-06 23:11:15.739 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.739 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/lib/bootstrap/dist/css/bootstrap.min.43atpzeawx.css - 200 232876 text/css 43.4478ms
+2026-04-06 23:11:15.766 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor/initializers - null null
+2026-04-06 23:11:15.766 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.770 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.771 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor/initializers - 200 null application/json; charset=utf-8 5.1557ms
+2026-04-06 23:11:15.773 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/favicon.png - null null
+2026-04-06 23:11:15.774 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.774 -04:00 [INF] The file favicon.png was not modified
+2026-04-06 23:11:15.774 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.774 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/favicon.png - 304 null image/png 0.9398ms
+2026-04-06 23:11:15.778 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 23:11:15.778 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.778 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:11:15.778 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.5955ms
+2026-04-06 23:11:15.781 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=lZ6iEHXnx2Z84oJsS4UPlw - null null
+2026-04-06 23:11:15.782 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:15:31.111 -04:00 [INF] GetSprintNames - Resolved path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 23:15:31.115 -04:00 [INF] GetSprintNames - Opening file: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 23:15:31.781 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 23:15:31.782 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 23:15:32.371 -04:00 [INF] GetReportDataForProject - Rows read: 10
+2026-04-06 23:15:32.386 -04:00 [INF] GetSprintNames - Report data rows: 10
+2026-04-06 23:15:32.387 -04:00 [INF] GetSprintNames - Sprint names found: 9
+2026-04-06 23:15:34.993 -04:00 [INF] GetReportDataForProject - Path: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 23:15:34.994 -04:00 [INF] GetReportDataForProject - Opening: C:\Repository\OneDrive Test\Projects\BOH\GlobalPayments-BOH_DeliveryQualitySummaryReport.xlsx
+2026-04-06 23:15:35.297 -04:00 [INF] GetReportDataForProject - Rows read: 10
+2026-04-06 23:16:24.274 -04:00 [INF] GetProjectDataForRange - Path: C:\Repository\OneDrive Test\Global Payments\GP_Sprint Metrics - Team\Mosaic BOH\BOH - Sprint Metrics.xlsx
+2026-04-06 23:16:24.274 -04:00 [INF] Request starting HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - null 0
+2026-04-06 23:16:24.274 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:16:24.274 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:16:24.274 -04:00 [INF] GetProjectDataForRange - Opening: C:\Repository\OneDrive Test\Global Payments\GP_Sprint Metrics - Team\Mosaic BOH\BOH - Sprint Metrics.xlsx
+2026-04-06 23:16:24.274 -04:00 [INF] Request finished HTTP/1.1 POST http://localhost:5158/_blazor/negotiate?negotiateVersion=1 - 200 316 application/json 0.6116ms
+2026-04-06 23:16:24.283 -04:00 [INF] Request starting HTTP/1.1 GET http://localhost:5158/_blazor?id=0zGiocTg_b7e-LENYkKShw - null null
+2026-04-06 23:16:24.283 -04:00 [INF] Executing endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:16:24.284 -04:00 [INF] Executed endpoint 'Microsoft.AspNetCore.Routing.RouteEndpoint'
+2026-04-06 23:16:24.284 -04:00 [INF] Request finished HTTP/1.1 GET http://localhost:5158/_blazor?id=lZ6iEHXnx2Z84oJsS4UPlw - 101 null null 308499.8999ms
+2026-04-06 23:16:31.302 -04:00 [INF] GetProjectDataForRange - Rows read from BOH - Sprint Metrics.xlsx: 88

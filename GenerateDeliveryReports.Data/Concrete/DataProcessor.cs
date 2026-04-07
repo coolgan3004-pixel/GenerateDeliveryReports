@@ -99,6 +99,8 @@ public class DataProcessor : IDataProcessor
             { "Remarks", "Remarks" }
         };
 
+        
+
         var reportData = GetReportDataForProject(projectName);
         SprintMetrics? sprintMetrics = reportData.Where(x => x.Sprint == sprintName).SingleOrDefault();
         
@@ -193,6 +195,25 @@ public class DataProcessor : IDataProcessor
 
             if (slide.Shapes[7] is IAutoShape sprintRetrospective)
                 sprintMetrics.SprintRetrospective = sprintRetrospective.TextFrame.Text.Replace("Retrospective:", "").Split("\r");
+        }
+        else
+        {
+            //fetch data from the dashboard sheet on the metricssheetpath workbooks 
+
+            foreach (var workbook in _appSettings.Projects.First(x => x.ProjectName == projectName).MetricsSheetPath)
+            {
+                var reportDaatTest = GetProjectDataForRange<string>(projectName, "B3:O90").ToList();
+                //find the sprintname formaatted in reportdaatest
+                var sprintData = reportDaatTest.FirstOrDefault(row => row[0]?.ToString() == sprintNameFormatted);
+                if (sprintData != null)
+                {
+                    sprintMetrics.SprintSummary.Concat(sprintData[7]?.ToString().Split("\n") ?? Array.Empty<string>()).ToArray();
+                    sprintMetrics.SprintHighlights.Concat(sprintData[8]?.ToString().Split("\n") ?? Array.Empty<string>()).ToArray();
+                   sprintMetrics.SprintRetrospective.Concat(sprintData[10]?.ToString().Split("\n") ?? Array.Empty<string>()).ToArray();
+                    
+
+                }
+            }
         }
 
         return sprintMetrics;
@@ -518,5 +539,35 @@ public class DataProcessor : IDataProcessor
         var data = wrapper.ReadSpecificColumnsFromRange<SprintMetrics>("Data", dicColVar, 1, "1:1").ToList();
         _logger.LogInformation("GetReportDataForProject - Rows read: {Count}", data.Count);
         return data;
+    }
+
+    private List<object?[]> GetProjectDataForRange<T>(string projectName, string range) where T : class
+    {
+        var result = new List<object?[]>();
+        var metricsPaths = _appSettings.Projects
+            .First(x => x.ProjectName == projectName).MetricsSheetPath;
+
+        foreach (var metricsPath in metricsPaths)
+        {
+            var filePath = Path.Combine(_appSettings.OneDriveLocation, _appSettings.MetricsFolder, metricsPath);
+            _logger.LogInformation("GetProjectDataForRange - Path: {Path}", filePath);
+
+            var recentFile = filePath.GetRecentlyModifiedSimilarFile();
+            if (recentFile == null)
+            {
+                _logger.LogWarning("GetProjectDataForRange - No file found for: {Path}", filePath);
+                continue;
+            }
+
+            _logger.LogInformation("GetProjectDataForRange - Opening: {File}", recentFile.FullName);
+            using var wrapper = new ExcelWrapper();
+            wrapper.Open(recentFile.FullName);
+            var data = wrapper.ReadRangeAsObjects("Dashboard", range);
+            _logger.LogInformation("GetProjectDataForRange - Rows read from {File}: {Count}", recentFile.Name, data.Count);
+            result.AddRange(data);
+        }
+
+        _logger.LogInformation("GetProjectDataForRange - Total rows after concatenation: {Count}", result.Count);
+        return result;
     }
 }

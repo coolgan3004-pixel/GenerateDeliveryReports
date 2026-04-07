@@ -105,6 +105,23 @@ public class ExcelWrapper : IWrapper
         return cells.ToCollection<T>();
     }
 
+    public List<object?[]> ReadRangeAsObjects(string sheetName, string range)
+    {
+        var ws = _package!.Workbook.Worksheets[sheetName];
+        var cells = ws!.Cells[range];
+        var result = new List<object?[]>();
+
+        for (int row = cells.Start.Row; row <= cells.End.Row; row++)
+        {
+            var rowValues = new object?[cells.End.Column - cells.Start.Column + 1];
+            for (int col = cells.Start.Column; col <= cells.End.Column; col++)
+                rowValues[col - cells.Start.Column] = ws.Cells[row, col].Value;
+            result.Add(rowValues);
+        }
+
+        return result;
+    }
+
     public IEnumerable<T> ReadSpecificColumnsFromRange<T>(string sheetName, Dictionary<string, string> dicColVariablePair, int rowStart = 1, string headerRange = "1:1") where T : class, new()
     {
         var ws = _package!.Workbook.Worksheets[sheetName];
