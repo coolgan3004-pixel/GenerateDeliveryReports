@@ -67,14 +67,25 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Publish succeeded." -ForegroundColor Green
 
 # Step 3: Copy PPTX template
-Write-Host "`n[3/6] Copying report template..." -ForegroundColor Yellow
+Write-Host "`n[3/7] Copying report template..." -ForegroundColor Yellow
 $TemplateDest = Join-Path $PublishDir "Templates"
 if (-not (Test-Path $TemplateDest)) { New-Item -ItemType Directory -Path $TemplateDest | Out-Null }
 Copy-Item -Path (Join-Path $TemplateSrc "*") -Destination $TemplateDest -Force
 Write-Host "Templates copied." -ForegroundColor Green
 
-# Step 4: Stop service if running
-Write-Host "`n[4/6] Stopping service '$ServiceName' (if running)..." -ForegroundColor Yellow
+# Step 4: Copy workeremailsettings.json (gitignored local secrets file)
+Write-Host "`n[4/7] Copying workeremailsettings.json..." -ForegroundColor Yellow
+$EmailSettingsSrc = Join-Path $PSScriptRoot "GenerateDeliveryReports.Worker\workeremailsettings.json"
+if (Test-Path $EmailSettingsSrc) {
+    Copy-Item -Path $EmailSettingsSrc -Destination $PublishDir -Force
+    Write-Host "workeremailsettings.json copied." -ForegroundColor Green
+} else {
+    Write-Host "WARNING: workeremailsettings.json not found at $EmailSettingsSrc" -ForegroundColor Magenta
+    Write-Host "         Create it manually on the target machine with the SendGrid API key." -ForegroundColor Magenta
+}
+
+# Step 5: Stop service if running
+Write-Host "`n[5/7] Stopping service '$ServiceName' (if running)..." -ForegroundColor Yellow
 $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if ($svc) {
     if ($svc.Status -ne 'Stopped') {
@@ -88,16 +99,16 @@ if ($svc) {
     Write-Host "Service not yet registered -- will create after copy." -ForegroundColor Gray
 }
 
-# Step 5: Copy to target
-Write-Host "`n[5/6] Deploying to $TargetPath ..." -ForegroundColor Yellow
+# Step 6: Copy to target
+Write-Host "`n[6/7] Deploying to $TargetPath ..." -ForegroundColor Yellow
 if (-not (Test-Path $TargetPath)) { New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null }
 Copy-Item -Path (Join-Path $PublishDir "*") -Destination $TargetPath -Recurse -Force
 Write-Host "Files deployed." -ForegroundColor Green
 
-# Step 6: Register or start service
+# Step 7: Register or start service
 $ExePath  = Join-Path $TargetPath "GenerateDeliveryReports.Worker.exe"
 $binArg   = ('`"{0}`"' -f $ExePath)
-Write-Host "`n[6/6] Registering / starting service '$ServiceName'..." -ForegroundColor Yellow
+Write-Host "`n[7/7] Registering / starting service '$ServiceName'..." -ForegroundColor Yellow
 
 $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if (-not $svc) {
