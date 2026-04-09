@@ -96,7 +96,8 @@ public class DataProcessor : IDataProcessor
         var result = new List<SprintInfo>();
         foreach (var sprintName in sprintNames)
         {
-            if (sprintName.IndexOf("2026", StringComparison.Ordinal) > 0)
+            _logger.LogInformation("Processing sprint name: {SprintName} , Project:{ProjectName}", sprintName, projectName); 
+            if (!string.IsNullOrEmpty(sprintName) && sprintName.IndexOf("2026", StringComparison.Ordinal) > 0)
             {
 
                 var info = new SprintInfo
