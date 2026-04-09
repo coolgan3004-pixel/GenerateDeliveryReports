@@ -1,0 +1,72 @@
+@page "/worker-summary"
+@using Microsoft.Extensions.Options
+@using GenerateDeliveryReports.Models
+@inject IOptions<AppSettings> AppSettings
+@inject ILogger<WorkerSummary> Logger
+@implements IDisposable
+
+<PageTitle>Worker Summary</PageTitle>
+
+<h3>Worker Cycle Summary</h3>
+
+@if (_lastUpdated.HasValue)
+{
+    <p class="text-muted" style="font-size:0.85rem">
+        Last updated: @_lastUpdated.Value.ToString("yyyy-MM-dd HH:mm:ss")
+        &nbsp;|&nbsp; Auto-refreshes every @RefreshSeconds seconds
+    </p>
+}
+
+@if (!_fileExists)
+{
+    <p class="text-muted">No summary available yet. The worker will generate one on its next cycle.</p>
+}
+else
+{
+    <iframe src="/worker-summary.html?t=@_cacheBust"
+            style="width:100%; border:none; height:calc(100vh - 160px);"
+            title="Worker Cycle Summary"></iframe>
+}
+
+@code {
+    private const int RefreshSeconds = 30;
+
+    private bool _fileExists;
+    private DateTime? _lastUpdated;
+    private long _cacheBust;
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSummaryAsync();
+        _timer = new Timer(async _ =>
+        {
+            await LoadSummaryAsync();
+            await InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(RefreshSeconds), TimeSpan.FromSeconds(RefreshSeconds));
+    }
+
+    private Task LoadSummaryAsync()
+    {
+        try
+        {
+            var path = AppSettings.Value.WorkerSummaryFilePath;
+            if (string.IsNullOrWhiteSpace(path))
+                path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "worker-summary.html");
+
+            _fileExists = File.Exists(path);
+            if (_fileExists)
+            {
+                _lastUpdated = File.GetLastWriteTime(path);
+                _cacheBust = _lastUpdated.Value.Ticks;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to check worker summary file.");
+        }
+        return Task.CompletedTask;
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

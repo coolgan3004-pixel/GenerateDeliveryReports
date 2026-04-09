@@ -86,6 +86,68 @@ public class DataProcessor : IDataProcessor
         }
     }
 
+    public IEnumerable<SprintInfo> GetSprintNamesWithDate(string projectName)
+    {
+        var sprintNames = GetSprintNames(projectName);
+        var project = _appSettings.Projects.Single(x => x.ProjectName == projectName);
+        var projectDir = Path.GetDirectoryName(
+            Path.Combine(_appSettings.OneDriveLocation, _appSettings.ReportAndDataFolder, project.DataFileName))!;
+
+        var result = new List<SprintInfo>();
+        foreach (var sprintName in sprintNames)
+        {
+            if (sprintName.IndexOf("2026", StringComparison.Ordinal) > 0)
+            {
+
+                var info = new SprintInfo
+                {
+                    ProjectName = projectName,
+                    SprintName = sprintName
+                };
+
+                // Parse dates from sprint name format: "Sprint X (DD-MMM-YYYY to DD-MMM-YYYY)" or numeric variants
+                var match = System.Text.RegularExpressions.Regex.Match(
+                    sprintName,
+                    @"\((\d{1,2}[\/\-\.]\w{1,9}[\/\-\.]\d{2,4})\s*to\s*(\d{1,2}[\/\-\.]\w{1,9}[\/\-\.]\d{2,4})\)");
+
+                if (match.Success)
+                {
+                    var formats = new[]
+                    {
+                        "d-MMM-yyyy", "dd-MMM-yyyy", "MMM-d-yyyy", "MMM-dd-yyyy",
+                        "d-MMMM-yyyy", "dd-MMMM-yyyy",
+                        "dd/MM/yyyy", "d/M/yyyy", "MM/dd/yyyy", "M/d/yyyy",
+                        "dd-MM-yyyy", "d-M-yyyy", "dd.MM.yyyy"
+                    };
+                    if (DateTime.TryParseExact(match.Groups[1].Value, formats,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.None, out var start))
+                        info.SprintStartDate = start;
+
+                    if (DateTime.TryParseExact(match.Groups[2].Value, formats,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            System.Globalization.DateTimeStyles.None, out var end))
+                        info.SprintEndDate = end;
+                }
+                else
+                {
+                    _logger.LogWarning("GetSprintNamesWithDate - Could not parse dates from sprint name: {SprintName}", sprintName);
+                }
+
+                var sprintNameFormatted = sprintName.Contains('(')
+                    ? sprintName[..sprintName.IndexOf('(')].Trim()
+                    : sprintName.Trim();
+
+                info.OutputPPTPath = Path.Combine(projectDir,
+                    $"GlobalPayments-{projectName}-DeliveryQualitySummaryReport-{sprintNameFormatted}.pptx");
+
+                result.Add(info);
+            }
+        }
+
+        return result;
+    }
+
     public SprintMetrics? GetSprintMetrics(string projectName, string sprintName)
     {
         List<DashboardData> datas = new();
@@ -107,7 +169,8 @@ public class DataProcessor : IDataProcessor
         var sprintNameFormatted = sprintName.Contains('(')
                 ? sprintName[..sprintName.IndexOf('(')].Trim()
                 : sprintName.Trim();
-        if (sprintMetrics == null)
+
+        /*if (sprintMetrics == null)
         {
             using var excelWrapper = new ExcelWrapper();
             
@@ -160,7 +223,7 @@ public class DataProcessor : IDataProcessor
                 Remarks = reportData.FirstOrDefault()?.Remarks,
                 CodeQualityIndex = $"{metricsDatas.Sum(x => x.CodeReviewCommentsExternal.ToInt()) + metricsDatas.Sum(x => x.CodeReviewCommentsInternal.ToInt())}%"
             };
-        }
+        }*/
 
         // Always save chart image and pre-fill narrative fields, regardless of data source
         var path = Path.Combine(_appSettings.OneDriveLocation, _appSettings.ReportAndDataFolder,
@@ -199,17 +262,23 @@ public class DataProcessor : IDataProcessor
         else
         {
             //fetch data from the dashboard sheet on the metricssheetpath workbooks 
+            var reportDaatTest = GetDashboardDataForRange(projectName, "B3:O90").ToList();
 
-            foreach (var workbook in _appSettings.Projects.First(x => x.ProjectName == projectName).MetricsSheetPath)
+            var sprintData = reportDaatTest.FirstOrDefault(data => data[0]?.ToString() == sprintNameFormatted);
+            //find the sprintname formaatted in reportdaatest
+            //log error when sprint data is null
+            if (sprintData == null)
             {
-                var reportDaatTest = GetProjectDataForRange<string>(projectName, "B3:O90").ToList();
-                //find the sprintname formaatted in reportdaatest
-                var sprintData = reportDaatTest.FirstOrDefault(row => row[0]?.ToString() == sprintNameFormatted);
-                if (sprintData != null)
+                 _logger.LogInformation($"Sprint data not found for sprint Name on Metrics sheet: {sprintNameFormatted}"); 
+            }
+         else
+            {
+                
+                
                 {
-                    sprintMetrics.SprintSummary.Concat(sprintData[7]?.ToString().Split("\n") ?? Array.Empty<string>()).ToArray();
-                    sprintMetrics.SprintHighlights.Concat(sprintData[8]?.ToString().Split("\n") ?? Array.Empty<string>()).ToArray();
-                   sprintMetrics.SprintRetrospective.Concat(sprintData[10]?.ToString().Split("\n") ?? Array.Empty<string>()).ToArray();
+                    sprintMetrics.SprintSummary = sprintData[6]?.ToString()?.Split("\n") ?? Array.Empty<string>();
+                    sprintMetrics.SprintHighlights = sprintData[7]?.ToString()?.Split("\n") ?? Array.Empty<string>();
+                   sprintMetrics.SprintRetrospective = sprintData[9]?.ToString()?.Split("\n") ?? Array.Empty<string>();
                     
 
                 }
@@ -249,7 +318,7 @@ public class DataProcessor : IDataProcessor
 
    
 
-    public (bool bReturn, string pdfPath) GeneratePresentation(ReportDataParameters reportParams)
+    public (bool bReturn, string pdfPath) GeneratePresentation(ReportDataParameters reportParams, bool generatePdf = true)
     {
         var presentation = new Presentation();
         var templatepath = _appSettings.SprintMetricsReportTemplatePath;        
@@ -435,16 +504,19 @@ public class DataProcessor : IDataProcessor
             throw new Exception(ErrorCodes.GetMessage(ErrorCodes.ERR_301, $"Unable to save PPTX to '{outputPPTPath}'. {ex.Message}"), ex);
         }
 
-        try
+        if (generatePdf)
         {
-            presentation.SaveToFile(outputPDFPath, Spire.Presentation.FileFormat.PDF);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception(ErrorCodes.GetMessage(ErrorCodes.ERR_301, $"Unable to save PDF to '{outputPDFPath}'. {ex.Message}"), ex);
+            try
+            {
+                presentation.SaveToFile(outputPDFPath, Spire.Presentation.FileFormat.PDF);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ErrorCodes.GetMessage(ErrorCodes.ERR_301, $"Unable to save PDF to '{outputPDFPath}'. {ex.Message}"), ex);
+            }
         }
 
-        return (true, outputPDFPath);
+        return (true, generatePdf ? outputPDFPath : outputPPTPath);
     }
 
     private static void AddSectionWithBulletPoints(IAutoShape shape, string headerText, List<string> items)
@@ -541,7 +613,7 @@ public class DataProcessor : IDataProcessor
         return data;
     }
 
-    private List<object?[]> GetProjectDataForRange<T>(string projectName, string range) where T : class
+    private List<object?[]> GetDashboardDataForRange(string projectName, string range) 
     {
         var result = new List<object?[]>();
         var metricsPaths = _appSettings.Projects
@@ -550,7 +622,7 @@ public class DataProcessor : IDataProcessor
         foreach (var metricsPath in metricsPaths)
         {
             var filePath = Path.Combine(_appSettings.OneDriveLocation, _appSettings.MetricsFolder, metricsPath);
-            _logger.LogInformation("GetProjectDataForRange - Path: {Path}", filePath);
+            _logger.LogInformation("GetDashboardDataForRange - Path: {Path}", filePath);
 
             var recentFile = filePath.GetRecentlyModifiedSimilarFile();
             if (recentFile == null)
