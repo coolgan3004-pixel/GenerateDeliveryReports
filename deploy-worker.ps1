@@ -105,7 +105,8 @@ if (-not (Test-Path $TargetPath)) { New-Item -ItemType Directory -Path $TargetPa
 Copy-Item -Path (Join-Path $PublishDir "*") -Destination $TargetPath -Recurse -Force
 Write-Host "Files deployed." -ForegroundColor Green
 
-# Step 7: Register or start service
+# Step 7: Register or start service (commented out -- enable when service issues are resolved)
+<#
 $ExePath  = Join-Path $TargetPath "GenerateDeliveryReports.Worker.exe"
 $binArg   = ('`"{0}`"' -f $ExePath)
 Write-Host "`n[7/7] Registering / starting service '$ServiceName'..." -ForegroundColor Yellow
@@ -136,6 +137,8 @@ if (-not [string]::IsNullOrWhiteSpace($ServiceAccount)) {
 
 Start-Service -Name $ServiceName
 Write-Host "Service started." -ForegroundColor Green
+#>
+Write-Host "`n[7/7] Service registration skipped -- enable Step 7 in deploy-worker.ps1 when ready." -ForegroundColor Magenta
 
 # Summary
 Write-Host "`n============================================" -ForegroundColor Cyan
