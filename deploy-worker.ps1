@@ -2,21 +2,26 @@
 # Deploy GenerateDeliveryReports.Worker as a Windows Service
 # =============================================================================
 # Usage:
-#   .\deploy-worker.ps1 -TargetPath "\\MACHINE\C$\Services\DeliveryReportsWorker"
-#   .\deploy-worker.ps1 -TargetPath "D:\Services\DeliveryReportsWorker"  (local)
+#   .\deploy-worker.ps1 -TargetPath "D:\Services\DeliveryReportsWorker" -ServiceAccount "DOMAIN\User" -ServicePassword "pass"
+#   .\deploy-worker.ps1 -TargetPath "\\MACHINE\C$\Services\DeliveryReportsWorker" -ServiceAccount "DOMAIN\User" -ServicePassword "pass"
 #
-# Pipeline usage (set variables in Azure DevOps):
-#   .\deploy-worker.ps1 -TargetPath "$(TargetPath)" -ServiceName "$(ServiceName)"
+# Pipeline usage (set variables in Azure DevOps, mark ServicePassword as secret):
+#   .\deploy-worker.ps1 -TargetPath "$(TargetPath)" -ServiceName "$(ServiceName)" -ServiceAccount "$(ServiceAccount)" -ServicePassword "$(ServicePassword)"
 # =============================================================================
 
 param(
     [Parameter(Mandatory = $true)]
     [string]$TargetPath,
 
-    [string]$ServiceName    = "DeliveryReportsWorker",
-    [string]$ServiceDisplay = "Delivery Reports Worker",
-    [string]$Configuration  = "Release",
-    [string]$Runtime        = "win-x64"
+    [string]$ServiceName     = "DeliveryReportsWorker",
+    [string]$ServiceDisplay  = "Delivery Reports Worker",
+    [string]$Configuration   = "Release",
+    [string]$Runtime         = "win-x64",
+
+    # Service account: set to a domain\user that has access to OneDrive sync path.
+    # Leave blank to use LocalSystem (only works if data paths are accessible to SYSTEM).
+    [string]$ServiceAccount  = "",
+    [string]$ServicePassword = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -80,7 +85,7 @@ if ($svc) {
         Write-Host "Service already stopped." -ForegroundColor Gray
     }
 } else {
-    Write-Host "Service not yet registered — will create after copy." -ForegroundColor Gray
+    Write-Host "Service not yet registered -- will create after copy." -ForegroundColor Gray
 }
 
 # Step 5: Copy to target
@@ -90,17 +95,32 @@ Copy-Item -Path (Join-Path $PublishDir "*") -Destination $TargetPath -Recurse -F
 Write-Host "Files deployed." -ForegroundColor Green
 
 # Step 6: Register or start service
-$ExePath = Join-Path $TargetPath "GenerateDeliveryReports.Worker.exe"
+$ExePath  = Join-Path $TargetPath "GenerateDeliveryReports.Worker.exe"
+$binArg   = ('`"{0}`"' -f $ExePath)
 Write-Host "`n[6/6] Registering / starting service '$ServiceName'..." -ForegroundColor Yellow
 
 $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if (-not $svc) {
-    sc.exe create $ServiceName binPath= "`"$ExePath`"" DisplayName= "$ServiceDisplay" start= auto | Out-Null
-    sc.exe description $ServiceName "Generates delivery quality summary reports on a schedule." | Out-Null
+    sc.exe create $ServiceName binPath= $binArg DisplayName= $ServiceDisplay start= auto | Out-Null
+    sc.exe description $ServiceName 'Generates delivery quality summary reports on a schedule.' | Out-Null
     Write-Host "Service registered." -ForegroundColor Green
 } else {
-    sc.exe config $ServiceName binPath= "`"$ExePath`"" | Out-Null
+    sc.exe config $ServiceName binPath= $binArg | Out-Null
     Write-Host "Service binary path updated." -ForegroundColor Green
+}
+
+# Configure the service account (required when OneDrive sync path is under a user profile)
+if (-not [string]::IsNullOrWhiteSpace($ServiceAccount)) {
+    Write-Host "Configuring service account: $ServiceAccount" -ForegroundColor Yellow
+    sc.exe config $ServiceName obj= $ServiceAccount password= $ServicePassword | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "WARNING: Failed to set service account. Check the account name and password." -ForegroundColor Red
+    } else {
+        Write-Host "Service account set to: $ServiceAccount" -ForegroundColor Green
+    }
+} else {
+    Write-Host "No ServiceAccount specified -- running as LocalSystem." -ForegroundColor Gray
+    Write-Host "NOTE: LocalSystem cannot access user-profile OneDrive paths. Pass -ServiceAccount if needed." -ForegroundColor Magenta
 }
 
 Start-Service -Name $ServiceName
@@ -119,5 +139,5 @@ Write-Host "     - Set 'EmailSettings.Password' (or set SENDGRID_API_KEY env var
 Write-Host "  2. Check service status:" -ForegroundColor White
 Write-Host "     Get-Service $ServiceName" -ForegroundColor Gray
 Write-Host "  3. View logs:" -ForegroundColor White
-Write-Host "     Get-Content $TargetPath\LogFiles\workerlog*.txt -Tail 50" -ForegroundColor Gray
+Write-Host ('     Get-Content ' + $TargetPath + '\LogFiles\workerlog*.txt -Tail 50') -ForegroundColor Gray
 Write-Host ""
