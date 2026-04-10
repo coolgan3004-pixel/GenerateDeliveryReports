@@ -48,8 +48,16 @@ public static class ReportEmailBuilder
             rowSelector: r => [r.ProjectName, r.SprintName, r.Detail is not null ? Path.GetFileName(r.Detail) : "—", r.Detail ?? "—"]);
 
         AppendSection(sb, "Errored Reports", errored, "errored",
-            headers: ["Project", "Sprint", "Error"],
-            rowSelector: r => [r.ProjectName, r.SprintName, r.Detail ?? "—"]);
+            headers: ["Project", "Sprint", "Error", "Metrics Available", "Summary", "Highlights", "Retrospective"],
+            rowSelector: r => [
+                r.ProjectName,
+                r.SprintName,
+                r.Detail ?? "—",
+                r.SprintMetricsDataAvailable.HasValue ? (r.SprintMetricsDataAvailable.Value ? "Yes" : "No") : "—",
+                r.SprintSummary is { Length: > 0 } ? string.Join(" | ", r.SprintSummary.Where(s => !string.IsNullOrWhiteSpace(s))) : "—",
+                r.SprintHighlights is { Length: > 0 } ? string.Join(" | ", r.SprintHighlights.Where(s => !string.IsNullOrWhiteSpace(s))) : "—",
+                r.SprintRetrospective is { Length: > 0 } ? string.Join(" | ", r.SprintRetrospective.Where(s => !string.IsNullOrWhiteSpace(s))) : "—"
+            ]);
 
         sb.AppendLine("</body></html>");
         return sb.ToString();

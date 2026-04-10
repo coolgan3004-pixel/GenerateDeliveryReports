@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Worker: GenerateDeliveryReports.Worker",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-worker",
+      "program": "${workspaceFolder}/GenerateDeliveryReports.Worker/bin/Debug/net10.0/GenerateDeliveryReports.Worker.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/GenerateDeliveryReports.Worker",
+      "console": "integratedTerminal",
+      "env": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Web: GenerateDeliveryReports",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-web",
+      "program": "${workspaceFolder}/GenerateDeliveryReports/bin/Debug/net10.0/GenerateDeliveryReports.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/GenerateDeliveryReports",
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  ]
+}

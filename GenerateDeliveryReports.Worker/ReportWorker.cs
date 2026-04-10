@@ -1,12 +1,11 @@
 using GenerateDeliveryReports.Data.Interface;
-using SendGrid;
-using SendGrid.Helpers.Mail;
 using GenerateDeliveryReports.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace GenerateDeliveryReports.Worker;
 
-public class ReportWorker : BackgroundService
+public class ReportWorker
 {
     private readonly IDataProcessor _dataProcessor;
     private readonly AppSettings _appSettings;
@@ -19,27 +18,15 @@ public class ReportWorker : BackgroundService
         _logger = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public async Task RunOnceAsync(CancellationToken cancellationToken)
     {
-        if (_appSettings.WorkerIntervalMinutes <= 0)
-        {
-            _logger.LogError("WorkerIntervalMinutes is not configured or is invalid. Worker will not run.");
-            return;
-        }
+        var cycleTime = DateTimeOffset.Now;
+        _logger.LogInformation("ReportWorker cycle starting at {Time}", cycleTime);
 
-        _logger.LogInformation("ReportWorker started. Interval: {Interval} minutes.", _appSettings.WorkerIntervalMinutes);
+        var results = await ProcessAllProjectsAsync(cancellationToken);
+        await SaveCycleSummaryAsync(results, cycleTime);
 
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            var cycleTime = DateTimeOffset.Now;
-            _logger.LogInformation("ReportWorker cycle starting at {Time}", cycleTime);
-
-            var results = await ProcessAllProjectsAsync(stoppingToken);
-            await SaveCycleSummaryAsync(results, cycleTime);
-
-            _logger.LogInformation("ReportWorker cycle complete. Next run in {Interval} minutes.", _appSettings.WorkerIntervalMinutes);
-            await Task.Delay(TimeSpan.FromMinutes(_appSettings.WorkerIntervalMinutes), stoppingToken);
-        }
+        _logger.LogInformation("ReportWorker cycle complete.");
     }
 
     private async Task<List<SprintReportResult>> ProcessAllProjectsAsync(CancellationToken stoppingToken)
@@ -125,7 +112,36 @@ public class ReportWorker : BackgroundService
 
         var metrics = FetchSprintMetrics(sprint);
         if (metrics == null)
-            return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = $"Metrics unavailable or narrative fields incomplete. Expected: {sprint.OutputPPTPath}" };
+            return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = $"Failed to retrieve metrics. Expected: {sprint.OutputPPTPath}" };
+
+        // Validate all 3 narrative fields are non-empty before generating
+        var summaryMissing     = metrics.SprintSummary       == null || !metrics.SprintSummary.Any(s => !string.IsNullOrWhiteSpace(s));
+        var highlightsMissing  = metrics.SprintHighlights    == null || !metrics.SprintHighlights.Any(s => !string.IsNullOrWhiteSpace(s));
+        var retroMissing       = metrics.SprintRetrospective == null || !metrics.SprintRetrospective.Any(s => !string.IsNullOrWhiteSpace(s));
+
+        if (summaryMissing || highlightsMissing || retroMissing)
+        {
+            _logger.LogWarning(
+                "[{Project}] [{Sprint}] Skipping report generation -- narrative fields incomplete. Summary: {S}, Highlights: {H}, Retrospective: {R}",
+                sprint.ProjectName, sprint.SprintName,
+                summaryMissing ? "MISSING" : "OK",
+                highlightsMissing ? "MISSING" : "OK",
+                retroMissing ? "MISSING" : "OK");
+
+            return new SprintReportResult
+            {
+                ProjectName              = sprint.ProjectName,
+                SprintName               = sprint.SprintName,
+                SprintEndDate            = sprint.SprintEndDate,
+                Outcome                  = SprintReportOutcome.Errored,
+                Detail                   = $"Narrative fields incomplete (Summary:{(summaryMissing ? "MISSING" : "OK")} Highlights:{(highlightsMissing ? "MISSING" : "OK")} Retrospective:{(retroMissing ? "MISSING" : "OK")}). Expected: {sprint.OutputPPTPath}",
+                SprintMetricsDataAvailable = metrics.SprintMetricsDataAvailable,
+                SprintSummary            = metrics.SprintSummary,
+                SprintHighlights         = metrics.SprintHighlights,
+                SprintRetrospective      = metrics.SprintRetrospective
+            };
+        }
+
         return await CreateReportAsync(sprint, metrics);
     }
 
@@ -194,10 +210,10 @@ public class ReportWorker : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError(ex, "[{Project}] [{Sprint}] Failed to generate report.", sprint.ProjectName, sprint.SprintName);
-            return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = ex.Message };
+            return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = ex.Message, SprintMetricsDataAvailable = metrics.SprintMetricsDataAvailable, SprintSummary = metrics.SprintSummary, SprintHighlights = metrics.SprintHighlights, SprintRetrospective = metrics.SprintRetrospective };
         }
 
-        return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = "GeneratePresentation returned false with no exception." };
+        return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = "GeneratePresentation returned false with no exception.", SprintMetricsDataAvailable = metrics.SprintMetricsDataAvailable, SprintSummary = metrics.SprintSummary, SprintHighlights = metrics.SprintHighlights, SprintRetrospective = metrics.SprintRetrospective };
     }
 
     private async Task SaveCycleSummaryAsync(List<SprintReportResult> results, DateTimeOffset cycleTime)
@@ -222,51 +238,38 @@ public class ReportWorker : BackgroundService
         await SendCycleSummaryEmailAsync(html, cycleTime);
     }
 
-    private async Task SendCycleSummaryEmailAsync(string html, DateTimeOffset cycleTime)
+    private Task SendCycleSummaryEmailAsync(string html, DateTimeOffset cycleTime)
     {
         var email = _appSettings.EmailSettings;
 
-        var apiKey = string.IsNullOrWhiteSpace(email.Password)
-            ? Environment.GetEnvironmentVariable("SENDGRID_API_KEY")
-            : email.Password;
-        _logger.LogInformation("SendGrid — key length: {Len}, from: {From}, recipients: {Count}",
-            apiKey?.Length ?? 0, email.FromEmailAddress, email.Users.Count);
-
-        if (string.IsNullOrWhiteSpace(email.SMTPServer) ||
-            string.IsNullOrWhiteSpace(apiKey) ||
-            string.IsNullOrWhiteSpace(email.FromEmailAddress) ||
-            email.Users.Count == 0)
+        if (email.Users.Count == 0)
         {
-            _logger.LogWarning("Email not sent — SMTP settings or recipient list is incomplete.");
-            return;
+            _logger.LogWarning("Email not sent -- no recipients configured.");
+            return Task.CompletedTask;
         }
 
         try
         {
-            var client = new SendGridClient(apiKey);
-            var message = new SendGridMessage
-            {
-                From = new EmailAddress(email.FromEmailAddress),
-                Subject = $"Delivery Report Cycle Summary — {cycleTime:yyyy-MM-dd HH:mm}",
-                HtmlContent = html
-            };
+            var outlook = new Microsoft.Office.Interop.Outlook.Application();
+            var mail = (Microsoft.Office.Interop.Outlook.MailItem)
+                outlook.CreateItem(Microsoft.Office.Interop.Outlook.OlItemType.olMailItem);
 
-            foreach (var user in email.Users)
-                message.AddTo(new EmailAddress(user.Email, user.Name));
+            mail.Subject = $"Delivery Report Cycle Summary - {cycleTime:yyyy-MM-dd HH:mm}";
+            mail.HTMLBody = html;
 
-            var response = await client.SendEmailAsync(message);
+            foreach (var u in email.Users)
+                mail.Recipients.Add(u.Email);
 
-            if ((int)response.StatusCode >= 200 && (int)response.StatusCode < 300)
-                _logger.LogInformation("Cycle summary email sent to {Count} recipient(s).", email.Users.Count);
-            else
-            {
-                var body = await response.Body.ReadAsStringAsync();
-                _logger.LogError("SendGrid returned {Status}: {Body}", response.StatusCode, body);
-            }
+            mail.Recipients.ResolveAll();
+            mail.Send();
+
+            _logger.LogInformation("Cycle summary email sent via Outlook to {Count} recipient(s).", email.Users.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send cycle summary email.");
+            _logger.LogError(ex, "Failed to send email via Outlook COM.");
         }
+
+        return Task.CompletedTask;
     }
 }

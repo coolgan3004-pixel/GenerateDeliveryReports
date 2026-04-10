@@ -2,6 +2,10 @@ using GenerateDeliveryReports.Data.Concrete;
 using GenerateDeliveryReports.Data.Interface;
 using GenerateDeliveryReports.Models;
 using GenerateDeliveryReports.Worker;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -9,24 +13,33 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .CreateLogger();
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Configuration.AddJsonFile("workeremailsettings.json", optional: false, reloadOnChange: true);
+try
+{
+    Log.Information("GenerateDeliveryReports Worker starting.");
 
-// Windows Service support
-builder.Services.AddWindowsService(options =>
-    options.ServiceName = "GenerateDeliveryReports Worker");
+    var builder = Host.CreateApplicationBuilder(args);
+    builder.Configuration.AddJsonFile("workeremailsettings.json", optional: true, reloadOnChange: false);
 
-// Serilog
-builder.Services.AddSerilog();
+    builder.Services.AddSerilog();
+    builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+    builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
+    builder.Services.AddSingleton<ReportWorker>();
 
-// Bind AppSettings
-builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+    var host = builder.Build();
 
-// Register data layer
-builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
+    var worker = host.Services.GetRequiredService<ReportWorker>();
+    await worker.RunOnceAsync(CancellationToken.None);
 
-// Register worker
-builder.Services.AddHostedService<ReportWorker>();
+    Log.Information("GenerateDeliveryReports Worker completed.");
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Worker terminated unexpectedly.");
+    return 1;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
 
-var host = builder.Build();
-host.Run();
+return 0;

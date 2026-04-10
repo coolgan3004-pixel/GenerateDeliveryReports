@@ -270,11 +270,12 @@ public class DataProcessor : IDataProcessor
             //log error when sprint data is null
             if (sprintData == null)
             {
+                sprintMetrics.SprintMetricsDataAvailable = false;
                  _logger.LogInformation($"Sprint data not found for sprint Name on Metrics sheet: {sprintNameFormatted}"); 
             }
          else
             {
-                
+                 sprintMetrics.SprintMetricsDataAvailable = true;
                 
                 {
                     sprintMetrics.SprintSummary = sprintData[6]?.ToString()?.Split("\n") ?? Array.Empty<string>();

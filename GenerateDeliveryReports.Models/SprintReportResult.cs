@@ -14,4 +14,10 @@ public class SprintReportResult
     public SprintReportOutcome Outcome { get; set; }
     public DateTime? SprintEndDate { get; set; }
     public string? Detail { get; set; }
+
+    // Populated for Errored results where metrics were fetched
+    public bool? SprintMetricsDataAvailable { get; set; }
+    public string[]? SprintSummary { get; set; }
+    public string[]? SprintHighlights { get; set; }
+    public string[]? SprintRetrospective { get; set; }
 }

@@ -20,6 +20,7 @@ public class SprintMetrics
     public string OutputPPTPath { get; set; } = string.Empty;
     public string Score { get; set; } = string.Empty;
     public string[]? SprintSummary { get; set; }
+    public bool SprintMetricsDataAvailable { get; set; }
     public string[]? SprintHighlights { get; set; }
     public string[]? SprintRetrospective { get; set; }
 }
