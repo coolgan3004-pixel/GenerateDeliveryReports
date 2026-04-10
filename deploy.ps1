@@ -74,6 +74,9 @@ $settings = Get-Content $AppSettingsPath -Raw | ConvertFrom-Json
 # Set template path relative to the exe
 $settings.AppSettings.SprintMetricsReportTemplatePath = "Templates\GlobalPayments-DeliveryQualitySummaryReport_Template.pptx"
 
+# Set WorkerSummaryFilePath to the wwwroot in the target deploy folder
+$settings.AppSettings.WorkerSummaryFilePath = Join-Path $TargetPath "wwwroot\worker-summary.html"
+
 $settings | ConvertTo-Json -Depth 10 | Set-Content $AppSettingsPath -Encoding UTF8
 Write-Host "appsettings.json updated." -ForegroundColor Green
 Write-Host "  NOTE: Update 'OneDriveLocation' in appsettings.json on the target machine." -ForegroundColor Magenta
