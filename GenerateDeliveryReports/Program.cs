@@ -4,6 +4,7 @@ using GenerateDeliveryReports.Data.Interface;
 using GenerateDeliveryReports.Data.Services;
 using GenerateDeliveryReports.Models;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,5 +52,18 @@ app.UseStaticFiles(new StaticFileOptions
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options) =>
+{
+    var path = options.Value.WorkerSummaryFilePath;
+    if (string.IsNullOrWhiteSpace(path))
+        path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "worker-summary.html");
+
+    if (!File.Exists(path))
+        return Results.NotFound();
+
+    var html = await File.ReadAllTextAsync(path);
+    return Results.Content(html, "text/html");
+});
 
 app.Run();
