@@ -250,9 +250,11 @@ public class ReportWorker
 
         try
         {
-            var outlook = new Microsoft.Office.Interop.Outlook.Application();
-            var mail = (Microsoft.Office.Interop.Outlook.MailItem)
-                outlook.CreateItem(Microsoft.Office.Interop.Outlook.OlItemType.olMailItem);
+            var outlookType = Type.GetTypeFromProgID("Outlook.Application")
+                ?? throw new InvalidOperationException("Outlook is not installed or not registered on this machine.");
+
+            dynamic outlook = Activator.CreateInstance(outlookType)!;
+            dynamic mail = outlook.CreateItem(0); // 0 = olMailItem
 
             mail.Subject = $"Delivery Report Cycle Summary - {cycleTime:yyyy-MM-dd HH:mm}";
             mail.HTMLBody = html;
