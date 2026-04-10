@@ -8,8 +8,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Serilog;
 
+var appDir = AppContext.BaseDirectory;
+var logDir = Path.Combine(appDir, "LogFiles");
+if (!Directory.Exists(logDir))
+    Directory.CreateDirectory(logDir);
+
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.File("LogFiles/workerlog.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.File(Path.Combine(logDir, "workerlog.txt"), rollingInterval: RollingInterval.Day)
     .WriteTo.Console()
     .CreateLogger();
 
