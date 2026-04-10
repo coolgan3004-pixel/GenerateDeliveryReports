@@ -235,7 +235,11 @@ public class ReportWorker
             _logger.LogError(ex, "Failed to save cycle summary.");
         }
 
-        await SendCycleSummaryEmailAsync(html, cycleTime);
+        var hasUpdates = results.Count > 0;
+        if (hasUpdates)
+            await SendCycleSummaryEmailAsync(html, cycleTime);
+        else
+            _logger.LogInformation("No results this cycle -- email skipped.");
     }
 
     private Task SendCycleSummaryEmailAsync(string html, DateTimeOffset cycleTime)
