@@ -39,7 +39,7 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 // Serve dynamically generated files (chart images, PDFs) from wwwroot/downloads
-var downloadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "downloads");
+var downloadsPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "downloads");
 if (!Directory.Exists(downloadsPath))
     Directory.CreateDirectory(downloadsPath);
 
@@ -57,7 +57,7 @@ app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options) =>
 {
     var path = options.Value.WorkerSummaryFilePath;
     if (string.IsNullOrWhiteSpace(path))
-        path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "worker-summary.html");
+        path = Path.Combine(AppContext.BaseDirectory, "wwwroot", "worker-summary.html");
 
     if (!File.Exists(path))
         return Results.NotFound();

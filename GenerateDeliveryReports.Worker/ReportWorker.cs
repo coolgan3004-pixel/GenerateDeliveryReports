@@ -223,7 +223,7 @@ public class ReportWorker
         try
         {
             var filePath = string.IsNullOrWhiteSpace(_appSettings.WorkerSummaryFilePath)
-                ? Path.Combine(Directory.GetCurrentDirectory(), "LogFiles", "worker-summary.html")
+                ? Path.Combine(AppContext.BaseDirectory, "LogFiles", "worker-summary.html")
                 : _appSettings.WorkerSummaryFilePath;
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);

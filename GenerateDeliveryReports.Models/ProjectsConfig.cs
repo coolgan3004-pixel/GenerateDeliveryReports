@@ -6,7 +6,7 @@ public class AppSettings
     {
         get
         {
-            var directory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "downloads");
+            var directory = Path.Combine(AppContext.BaseDirectory, "wwwroot", "downloads");
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
             return directory;
