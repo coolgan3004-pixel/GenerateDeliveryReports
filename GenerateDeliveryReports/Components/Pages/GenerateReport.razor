@@ -287,6 +287,14 @@
             sprintHighlights = string.Join("\n", sprintMetrics.SprintHighlights?.RemoveEmptyLines() ?? []);
             sprintRetrospective = string.Join("\n", sprintMetrics.SprintRetrospective?.RemoveEmptyLines() ?? []);
 
+            if (!sprintMetrics.SprintMetricsDataAvailable )
+                errorMessage = "Sprint metrics data unavailable due to mismatching sprint names.";
+            else if (
+                string.IsNullOrWhiteSpace(sprintSummary) ||
+                string.IsNullOrWhiteSpace(sprintHighlights) ||
+                string.IsNullOrWhiteSpace(sprintRetrospective))
+                errorMessage = "One or more required fields (Sprint Summary, Highlights, Retrospective) are empty or unavailable. Please update the metrics andf generate again.";
+
             statusMessage = $"Sprint data loaded successfully. Report path: {sprintMetrics.OutputPPTPath}"; 
 
             }

@@ -6,12 +6,20 @@ using GenerateDeliveryReports.Models;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Serilog;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Kestrel: HTTP only, listen on all interfaces so other machines on the LAN can connect
+builder.WebHost.UseUrls("http://*:5158");
+
 // Serilog
+var logDir = Path.Combine(AppContext.BaseDirectory, "LogFiles");
+if (!Directory.Exists(logDir))
+    Directory.CreateDirectory(logDir);
 builder.Host.UseSerilog((ctx, cfg) =>
-    cfg.WriteTo.File("LogFiles/log.txt", rollingInterval: RollingInterval.Day));
+    cfg.WriteTo.File(Path.Combine(logDir, "log.txt"), rollingInterval: RollingInterval.Day)
+       .WriteTo.Console());
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -34,7 +42,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-app.UseHttpsRedirection();
+
+// HTTP only -- no HTTPS redirect
 
 app.UseAntiforgery();
 
@@ -64,6 +73,16 @@ app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options) =>
 
     var html = await File.ReadAllTextAsync(path);
     return Results.Content(html, "text/html");
+});
+
+// Auto-launch browser on the local machine when the server starts
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    try
+    {
+        Process.Start(new ProcessStartInfo("http://localhost:5158") { UseShellExecute = true });
+    }
+    catch { /* non-critical */ }
 });
 
 app.Run();
