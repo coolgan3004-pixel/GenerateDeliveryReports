@@ -48,12 +48,12 @@ public static class ReportEmailBuilder
             rowSelector: r => [r.ProjectName, r.SprintName, r.Detail is not null ? Path.GetFileName(r.Detail) : "—", r.Detail ?? "—"]);
 
         AppendSection(sb, "Errored Reports", errored, "errored",
-            headers: ["Project", "Sprint", "Error", "Metrics Available", "Summary", "Highlights", "Retrospective"],
+            headers: ["Project", "Sprint", "Error", "Sprint Name (Metrics Sheet)", "Summary", "Highlights", "Retrospective"],
             rowSelector: r => [
                 r.ProjectName,
                 r.SprintName,
                 r.Detail ?? "—",
-                r.SprintMetricsDataAvailable.HasValue ? (r.SprintMetricsDataAvailable.Value ? "Yes" : "No") : "—",
+                r.SprintMetricsSprintName ?? "—",
                 r.SprintSummary is { Length: > 0 } ? string.Join(" | ", r.SprintSummary.Where(s => !string.IsNullOrWhiteSpace(s))) : "—",
                 r.SprintHighlights is { Length: > 0 } ? string.Join(" | ", r.SprintHighlights.Where(s => !string.IsNullOrWhiteSpace(s))) : "—",
                 r.SprintRetrospective is { Length: > 0 } ? string.Join(" | ", r.SprintRetrospective.Where(s => !string.IsNullOrWhiteSpace(s))) : "—"

@@ -255,7 +255,8 @@
 
         try
         {
-            sprintMetrics = await Task.Run(() => Service.GetSprintMetrics(selectedProject, selectedSprint));
+            var sprintInfo = new SprintInfo { ProjectName = selectedProject, SprintName = selectedSprint };
+            sprintMetrics = await Task.Run(() => Service.GetSprintMetrics(sprintInfo));
             if (sprintMetrics != null)
             {
                 committedValue = sprintMetrics.Committed.ToLong();
@@ -287,7 +288,7 @@
             sprintHighlights = string.Join("\n", sprintMetrics.SprintHighlights?.RemoveEmptyLines() ?? []);
             sprintRetrospective = string.Join("\n", sprintMetrics.SprintRetrospective?.RemoveEmptyLines() ?? []);
 
-            if (!sprintMetrics.SprintMetricsDataAvailable )
+            if (sprintMetrics.SprintMetricsSprintName == "Sprint Name not found on Metrics sheet")
                 errorMessage = "Sprint metrics data unavailable due to mismatching sprint names.";
             else if (
                 string.IsNullOrWhiteSpace(sprintSummary) ||

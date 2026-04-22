@@ -135,7 +135,7 @@ public class ReportWorker
                 SprintEndDate            = sprint.SprintEndDate,
                 Outcome                  = SprintReportOutcome.Errored,
                 Detail                   = $"Narrative fields incomplete (Summary:{(summaryMissing ? "MISSING" : "OK")} Highlights:{(highlightsMissing ? "MISSING" : "OK")} Retrospective:{(retroMissing ? "MISSING" : "OK")}). Expected: {sprint.OutputPPTPath}",
-                SprintMetricsDataAvailable = metrics.SprintMetricsDataAvailable,
+                SprintMetricsSprintName  = metrics.SprintMetricsSprintName,
                 SprintSummary            = metrics.SprintSummary,
                 SprintHighlights         = metrics.SprintHighlights,
                 SprintRetrospective      = metrics.SprintRetrospective
@@ -150,7 +150,7 @@ public class ReportWorker
         SprintMetrics? metrics;
         try
         {
-            metrics = _dataProcessor.GetSprintMetrics(sprint.ProjectName, sprint.SprintName);
+            metrics = _dataProcessor.GetSprintMetrics(sprint);
         }
         catch (Exception ex)
         {
@@ -193,10 +193,10 @@ public class ReportWorker
         catch (Exception ex)
         {
             _logger.LogError(ex, "[{Project}] [{Sprint}] Failed to generate report.", sprint.ProjectName, sprint.SprintName);
-            return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = ex.Message, SprintMetricsDataAvailable = metrics.SprintMetricsDataAvailable, SprintSummary = metrics.SprintSummary, SprintHighlights = metrics.SprintHighlights, SprintRetrospective = metrics.SprintRetrospective };
+            return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = ex.Message, SprintMetricsSprintName = metrics.SprintMetricsSprintName, SprintSummary = metrics.SprintSummary, SprintHighlights = metrics.SprintHighlights, SprintRetrospective = metrics.SprintRetrospective };
         }
 
-        return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = "GeneratePresentation returned false with no exception.", SprintMetricsDataAvailable = metrics.SprintMetricsDataAvailable, SprintSummary = metrics.SprintSummary, SprintHighlights = metrics.SprintHighlights, SprintRetrospective = metrics.SprintRetrospective };
+            return new SprintReportResult { ProjectName = sprint.ProjectName, SprintName = sprint.SprintName, SprintEndDate = sprint.SprintEndDate, Outcome = SprintReportOutcome.Errored, Detail = "GeneratePresentation returned false with no exception.", SprintMetricsSprintName = metrics.SprintMetricsSprintName, SprintSummary = metrics.SprintSummary, SprintHighlights = metrics.SprintHighlights, SprintRetrospective = metrics.SprintRetrospective };
     }
 
     private async Task SaveCycleSummaryAsync(List<SprintReportResult> results, DateTimeOffset cycleTime)

@@ -149,8 +149,11 @@ public partial class DataProcessor : IDataProcessor
         return result;
     }
 
-    public SprintMetrics? GetSprintMetrics(string projectName, string sprintName)
+    public SprintMetrics? GetSprintMetrics(SprintInfo sprint)
     {
+        var projectName = sprint.ProjectName;
+        var sprintName = sprint.SprintName;
+
         List<DashboardData> datas = new();
         var colVarPair = new Dictionary<string, string>
         {
@@ -266,24 +269,35 @@ public partial class DataProcessor : IDataProcessor
             var reportDaatTest = GetDashboardDataForRange(projectName, "B3:O90").ToList();
 
             var sprintData = reportDaatTest.FirstOrDefault(data => data[0]?.ToString() == sprintNameFormatted);
-            //find the sprintname formaatted in reportdaatest
-            //log error when sprint data is null
+
+            // Fallback: match by start/end date from SprintInfo when sprint name doesn't match
+            if (sprintData == null && sprint.SprintStartDate.HasValue && sprint.SprintEndDate.HasValue)
+            {
+                _logger.LogInformation("GetSprintMetrics - Sprint name '{Name}' not matched; trying date-based fallback.", sprintNameFormatted);
+                sprintData = reportDaatTest.FirstOrDefault(data =>
+                {
+                    var startMatches = (data[1] is DateTime s && s.Date == sprint.SprintStartDate.Value.Date)
+                                    || (DateTime.TryParse(data[1]?.ToString(), out var ps) && ps.Date == sprint.SprintStartDate.Value.Date);
+                    var endMatches   = (data[2] is DateTime e && e.Date == sprint.SprintEndDate.Value.Date)
+                                    || (DateTime.TryParse(data[2]?.ToString(), out var pe) && pe.Date == sprint.SprintEndDate.Value.Date);
+                    return startMatches && endMatches;
+                });
+
+                if (sprintData != null)
+                    _logger.LogInformation("GetSprintMetrics - Matched sprint by date range: '{MatchedName}'", sprintData[0]?.ToString());
+            }
+
             if (sprintData == null)
             {
-                sprintMetrics.SprintMetricsDataAvailable = false;
-                 _logger.LogInformation($"Sprint data not found for sprint Name on Metrics sheet: {sprintNameFormatted}"); 
+                sprintMetrics.SprintMetricsSprintName = "Sprint Name not found on Metrics sheet";
+                _logger.LogInformation("GetSprintMetrics - Sprint data not found for: {Name}", sprintNameFormatted);
             }
-         else
+            else
             {
-                 sprintMetrics.SprintMetricsDataAvailable = true;
-                
-                {
-                    sprintMetrics.SprintSummary = sprintData[6]?.ToString()?.Split("\n") ?? Array.Empty<string>();
-                    sprintMetrics.SprintHighlights = sprintData[7]?.ToString()?.Split("\n") ?? Array.Empty<string>();
-                   sprintMetrics.SprintRetrospective = sprintData[9]?.ToString()?.Split("\n") ?? Array.Empty<string>();
-                    
-
-                }
+                sprintMetrics.SprintMetricsSprintName = sprintData[0]?.ToString() ?? "";
+                sprintMetrics.SprintSummary = sprintData[6]?.ToString()?.Split("\n") ?? Array.Empty<string>();
+                sprintMetrics.SprintHighlights = sprintData[7]?.ToString()?.Split("\n") ?? Array.Empty<string>();
+                sprintMetrics.SprintRetrospective = sprintData[9]?.ToString()?.Split("\n") ?? Array.Empty<string>();
             }
         }
 

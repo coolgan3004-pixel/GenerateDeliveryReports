@@ -17,7 +17,7 @@ public class SprintReportService
     public IEnumerable<string> GetSprintNames(string projectName) => _dataProcessor.GetSprintNames(projectName);
     public IEnumerable<SprintInfo> GetSprintNamesWithDate(string projectName) => _dataProcessor.GetSprintNamesWithDate(projectName);
 
-    public SprintMetrics? GetSprintMetrics(string projectName, string sprintName) => _dataProcessor.GetSprintMetrics(projectName, sprintName);
+    public SprintMetrics? GetSprintMetrics(SprintInfo sprint) => _dataProcessor.GetSprintMetrics(sprint);
 
 
     public (bool bReturn, string pdfPath) GeneratePresentation(ReportDataParameters reportParams, bool generatePdf = true) => _dataProcessor.GeneratePresentation(reportParams, generatePdf);

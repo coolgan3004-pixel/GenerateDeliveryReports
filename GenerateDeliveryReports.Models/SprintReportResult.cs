@@ -16,7 +16,7 @@ public class SprintReportResult
     public string? Detail { get; set; }
 
     // Populated for Errored results where metrics were fetched
-    public bool? SprintMetricsDataAvailable { get; set; }
+    public string? SprintMetricsSprintName { get; set; }
     public string[]? SprintSummary { get; set; }
     public string[]? SprintHighlights { get; set; }
     public string[]? SprintRetrospective { get; set; }
