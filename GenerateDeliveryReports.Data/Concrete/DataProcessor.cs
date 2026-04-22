@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace GenerateDeliveryReports.Data.Concrete;
 
-public class DataProcessor : IDataProcessor
+public partial class DataProcessor : IDataProcessor
 {
     private readonly AppSettings _appSettings;
     private readonly ILogger<DataProcessor> _logger;

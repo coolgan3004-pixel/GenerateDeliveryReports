@@ -164,23 +164,6 @@ public class ReportWorker
             return null;
         }
 
-        // Validate all 3 narrative fields are non-empty
-        var summaryMissing = metrics.SprintSummary == null || !metrics.SprintSummary.Any(s => !string.IsNullOrWhiteSpace(s));
-        var highlightsMissing = metrics.SprintHighlights == null || !metrics.SprintHighlights.Any(s => !string.IsNullOrWhiteSpace(s));
-        var retrospectiveMissing = metrics.SprintRetrospective == null || !metrics.SprintRetrospective.Any(s => !string.IsNullOrWhiteSpace(s));
-
-        if (summaryMissing || highlightsMissing || retrospectiveMissing)
-        {
-            _logger.LogWarning(
-                "[{Project}] [{Sprint}] Skipping report generation — one or more narrative fields are empty. " +
-                "Summary: {S}, Highlights: {H}, Retrospective: {R}",
-                sprint.ProjectName, sprint.SprintName,
-                summaryMissing ? "MISSING" : "OK",
-                highlightsMissing ? "MISSING" : "OK",
-                retrospectiveMissing ? "MISSING" : "OK");
-            return null;
-        }
-
         return metrics;
     }
 
