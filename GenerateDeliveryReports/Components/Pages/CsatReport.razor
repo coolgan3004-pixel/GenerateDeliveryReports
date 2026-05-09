@@ -1,0 +1,291 @@
+@page "/csat-report"
+@rendermode InteractiveServer
+@using GenerateDeliveryReports.Models
+@using GenerateDeliveryReports.Data.Services
+@inject CsatService CsatService
+
+<PageTitle>CSAT Report</PageTitle>
+
+<h1 class="mb-4">CSAT Report</h1>
+
+<div class="container-fluid">
+
+    @* ─── Client Selection ─── *@
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="clientSelect" class="form-label fw-semibold">Client</label>
+            <select id="clientSelect" class="form-select" @onchange="OnClientChanged" disabled="@isGenerating">
+                <option value="">-- Select a Client --</option>
+                @foreach (var name in clientNames)
+                {
+                    <option value="@name">@name</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    @if (isGenerating && sheetNames.Count > 0)
+    {
+        <div class="d-flex align-items-center mb-3">
+            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+            <span class="small text-muted">Generating PDFs… (@generatedPdfs.Count of @sheetNames.Count done)</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(selectedClient))
+    {
+        @* Dynamic split: no preview → wider left; preview open → 5/7 split *@
+        <div class="row">
+            <div class="@(showPreview ? "col-md-5" : "col-md-8")">
+
+                @* ── Sheet list ── *@
+                <div class="card mb-3">
+                    <div class="card-header fw-semibold">CSAT Sheets</div>
+                    <div class="card-body p-2">
+                        @if (sheetNames.Count == 0)
+                        {
+                            <p class="text-muted small">No sheets configured for this client.</p>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                @foreach (var sheet in sheetNames)
+                                {
+                                    bool hasPdf = generatedPdfs.ContainsKey(sheet);
+                                    bool isActive = previewSheet == sheet && showPreview;
+                                    <li class="list-group-item d-flex align-items-center justify-content-between py-2 px-3
+                                               @(isActive ? "list-group-item-primary" : "")">
+                                        <span class="@(hasPdf ? "fw-semibold" : "")"
+                                              style="@(hasPdf ? "cursor:pointer" : "")"
+                                              @onclick="() => { if (hasPdf) ShowPreview(sheet); }">
+                                            @sheet
+                                            @if (hasPdf)
+                                            {
+                                                <span class="badge bg-success ms-2">PDF</span>
+                                            }
+                                        </span>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (generatingSheet == sheet)
+                                            {
+                                                <span class="spinner-border spinner-border-sm text-secondary"></span>
+                                            }
+                                            else if (hasPdf)
+                                            {
+                                                @* Attach checkbox *@
+                                                <div class="form-check mb-0" title="Attach to email">
+                                                    <input type="checkbox"
+                                                           class="form-check-input"
+                                                           id="chk_@sheet"
+                                                           checked="@attachedSheets.Contains(sheet)"
+                                                           @onchange="e => ToggleAttachment(sheet, (bool)e.Value!)" />
+                                                    <label class="form-check-label small" for="chk_@sheet">Attach</label>
+                                                </div>
+                                                @* Preview button *@
+                                                <button class="btn btn-outline-primary btn-sm"
+                                                        @onclick="() => ShowPreview(sheet)">
+                                                    Preview
+                                                </button>
+                                            }
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+
+                @* ── Attachments ── *@
+                @if (attachedSheets.Count > 0)
+                {
+                    <div class="card mb-3">
+                        <div class="card-header fw-semibold">Attachments</div>
+                        <div class="card-body p-2">
+                            <ul class="list-group list-group-flush">
+                                @foreach (var sheet in attachedSheets)
+                                {
+                                    <li class="list-group-item d-flex align-items-center justify-content-between py-2 px-3">
+                                        <span class="small">@sheet</span>
+                                        <a href="@generatedPdfs[sheet]" target="_blank" class="btn btn-outline-secondary btn-sm">Download</a>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                }
+
+                @* ── Email Form ── *@
+                <div class="card">
+                    <div class="card-header fw-semibold">Send Email</div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">From</label>
+                            <input type="email" class="form-control form-control-sm" @bind="emailFrom" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">To</label>
+                            <input type="email" class="form-control form-control-sm" @bind="emailTo" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold">Subject</label>
+                            <input type="text" class="form-control form-control-sm" @bind="emailSubject" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Body</label>
+                            <textarea class="form-control form-control-sm" rows="5" @bind="emailBody"></textarea>
+                        </div>
+                        <button class="btn btn-primary w-100"
+                                disabled="@(attachedSheets.Count == 0 || isSending)"
+                                @onclick="SendEmail">
+                            @if (isSending)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            Send (@attachedSheets.Count attachment@(attachedSheets.Count == 1 ? "" : "s"))
+                        </button>
+                        @if (!string.IsNullOrEmpty(sendResult))
+                        {
+                            <div class="alert @(sendSuccess ? "alert-success" : "alert-danger") mt-2 py-2 small">
+                                @sendResult
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+
+            @* ─── Right panel: PDF Preview (hidden until a PDF is selected) ─── *@
+            @if (showPreview)
+            {
+                <div class="col-md-7">
+                    <div class="card h-100">
+                        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                            <span>Preview — @previewSheet</span>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="ClosePreview">✕ Close</button>
+                        </div>
+                        <div class="card-body p-0">
+                            @if (!string.IsNullOrEmpty(errorMessage))
+                            {
+                                <div class="alert alert-danger m-3 small">@errorMessage</div>
+                            }
+                            else
+                            {
+                                <iframe src="@previewPdfUrl" style="width:100%;height:700px;border:none;"></iframe>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private IEnumerable<string> clientNames = [];
+    private List<string> sheetNames = [];
+    private string selectedClient = string.Empty;
+    private string previewSheet = string.Empty;
+    private string previewPdfUrl = string.Empty;
+    private string errorMessage = string.Empty;
+    private string generatingSheet = string.Empty;   // which sheet is currently generating
+    private bool isGenerating = false;
+    private bool showPreview = false;
+    private bool isSending = false;
+    private bool sendSuccess = false;
+    private string sendResult = string.Empty;
+
+    private Dictionary<string, string> generatedPdfs = new();
+    private HashSet<string> attachedSheets = new();
+
+    private string emailFrom = string.Empty;
+    private string emailTo = string.Empty;
+    private string emailSubject = string.Empty;
+    private string emailBody = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        clientNames = CsatService.GetClientNames();
+        emailFrom = CsatService.GetDefaultFromEmail();
+        emailSubject = CsatService.GetDefaultSubject();
+    }
+
+    private async Task OnClientChanged(ChangeEventArgs e)
+    {
+        selectedClient = e.Value?.ToString() ?? string.Empty;
+        sheetNames = CsatService.GetSheetNames(selectedClient).ToList();
+        generatedPdfs.Clear();
+        attachedSheets.Clear();
+        previewSheet = string.Empty;
+        previewPdfUrl = string.Empty;
+        showPreview = false;
+        errorMessage = string.Empty;
+
+        // Pre-populate email fields from config
+        emailFrom = CsatService.GetDefaultFromEmail();
+        emailTo = CsatService.GetClientEmail(selectedClient);
+        emailSubject = CsatService.GetDefaultSubject();
+        emailBody = string.Empty;
+
+        // Auto-generate PDFs for all sheets
+        if (sheetNames.Count > 0)
+        {
+            isGenerating = true;
+            foreach (var sheet in sheetNames)
+            {
+                generatingSheet = sheet;
+                StateHasChanged();
+                await Task.Run(() =>
+                {
+                    try
+                    {
+                        var url = CsatService.GenerateSheetPdf(selectedClient, sheet);
+                        generatedPdfs[sheet] = url;
+                    }
+                    catch (Exception ex)
+                    {
+                        errorMessage = $"Error generating PDF for '{sheet}': {ex.Message}";
+                    }
+                });
+            }
+            generatingSheet = string.Empty;
+            isGenerating = false;
+        }
+    }
+
+    private void ShowPreview(string sheet)
+    {
+        if (!generatedPdfs.TryGetValue(sheet, out var url)) return;
+        previewSheet = sheet;
+        previewPdfUrl = url;
+        showPreview = true;
+        errorMessage = string.Empty;
+    }
+
+    private void ClosePreview()
+    {
+        showPreview = false;
+        previewSheet = string.Empty;
+        previewPdfUrl = string.Empty;
+    }
+
+    private void ToggleAttachment(string sheet, bool attach)
+    {
+        if (attach) attachedSheets.Add(sheet);
+        else attachedSheets.Remove(sheet);
+    }
+
+    private async Task SendEmail()
+    {
+        isSending = true;
+        sendResult = string.Empty;
+        StateHasChanged();
+
+        // Placeholder — wire up to email service when ready
+        await Task.Delay(500);
+        sendSuccess = false;
+        sendResult = "Email sending is not yet configured. Please set up the EmailSettings in appsettings.json.";
+
+        isSending = false;
+        StateHasChanged();
+    }
+}
+

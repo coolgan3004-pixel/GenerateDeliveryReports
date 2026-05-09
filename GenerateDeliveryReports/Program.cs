@@ -31,6 +31,7 @@ builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSet
 // Register data layer services
 builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
 builder.Services.AddScoped<SprintReportService>();
+builder.Services.AddScoped<CsatService>();
 
 var app = builder.Build();
 

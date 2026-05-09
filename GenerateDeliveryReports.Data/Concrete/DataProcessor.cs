@@ -265,8 +265,22 @@ public partial class DataProcessor : IDataProcessor
         }
         else
         {
+            var metricsPaths = _appSettings.Projects.First(x => x.ProjectName == projectName).MetricsSheetPath;
+            var resolvedMetricsPaths = new List<string>();
+            foreach (var metricsPath in metricsPaths)
+            {
+                var resolvedPath = Path.Combine(_appSettings.OneDriveLocation, _appSettings.MetricsFolder, metricsPath);
+                if (resolvedPath.GetRecentlyModifiedSimilarFile() == null)
+                {
+                    _logger.LogWarning("GetSprintMetrics - Metrics sheet file not found: {Path}", resolvedPath);
+                    sprintMetrics.SprintMetricsSprintName = $"Metrics sheet file not found: {resolvedPath}";
+                    return sprintMetrics;
+                }
+                resolvedMetricsPaths.Add(resolvedPath);
+            }
+
             //fetch data from the dashboard sheet on the metricssheetpath workbooks 
-            var reportDaatTest = GetDashboardDataForRange(projectName, "B3:O90").ToList();
+            var reportDaatTest = GetDashboardDataForRange(resolvedMetricsPaths, "B3:O90").ToList();
 
             var sprintData = reportDaatTest.FirstOrDefault(data => data[0]?.ToString() == sprintNameFormatted);
 
@@ -629,33 +643,29 @@ public partial class DataProcessor : IDataProcessor
         return data;
     }
 
-    private List<object?[]> GetDashboardDataForRange(string projectName, string range) 
+    private List<object?[]> GetDashboardDataForRange(IEnumerable<string> resolvedFilePaths, string range)
     {
         var result = new List<object?[]>();
-        var metricsPaths = _appSettings.Projects
-            .First(x => x.ProjectName == projectName).MetricsSheetPath;
 
-        foreach (var metricsPath in metricsPaths)
+        foreach (var filePath in resolvedFilePaths)
         {
-            var filePath = Path.Combine(_appSettings.OneDriveLocation, _appSettings.MetricsFolder, metricsPath);
-            _logger.LogInformation("GetDashboardDataForRange - Path: {Path}", filePath);
+            _logger.LogInformation("GetDashboardDataForRange - Opening: {Path}", filePath);
 
             var recentFile = filePath.GetRecentlyModifiedSimilarFile();
             if (recentFile == null)
             {
-                _logger.LogWarning("GetProjectDataForRange - No file found for: {Path}", filePath);
+                _logger.LogWarning("GetDashboardDataForRange - No file found for: {Path}", filePath);
                 continue;
             }
 
-            _logger.LogInformation("GetProjectDataForRange - Opening: {File}", recentFile.FullName);
             using var wrapper = new ExcelWrapper();
             wrapper.Open(recentFile.FullName);
             var data = wrapper.ReadRangeAsObjects("Dashboard", range);
-            _logger.LogInformation("GetProjectDataForRange - Rows read from {File}: {Count}", recentFile.Name, data.Count);
+            _logger.LogInformation("GetDashboardDataForRange - Rows read from {File}: {Count}", recentFile.Name, data.Count);
             result.AddRange(data);
         }
 
-        _logger.LogInformation("GetProjectDataForRange - Total rows after concatenation: {Count}", result.Count);
+        _logger.LogInformation("GetDashboardDataForRange - Total rows after concatenation: {Count}", result.Count);
         return result;
     }
 }
