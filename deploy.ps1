@@ -79,6 +79,16 @@ $content = $content -replace '(?<="SprintMetricsReportTemplatePath"\s*:\s*")[^"]
 # Clear the hardcoded dev-machine path so the app uses its built-in fallback (wwwroot/worker-summary.html)
 $content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")', ''
 [System.IO.File]::WriteAllText($AppSettingsPath, $content, [System.Text.Encoding]::UTF8)
+
+# Verify CSAT section survived
+if ($content -notmatch '"CSAT"') {
+    Write-Host "ERROR: CSAT section is missing from appsettings.json after update. Aborting deploy." -ForegroundColor Red
+    exit 1
+}
+if ($content -notmatch '"Clients"') {
+    Write-Host "ERROR: CSAT Clients array is missing from appsettings.json after update. Aborting deploy." -ForegroundColor Red
+    exit 1
+}
 Write-Host "appsettings.json updated." -ForegroundColor Green
 Write-Host "  NOTE: Update 'OneDriveLocation' in appsettings.json on the target machine." -ForegroundColor Magenta
 
