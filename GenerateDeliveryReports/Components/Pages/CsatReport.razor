@@ -42,6 +42,10 @@
                 <div class="card mb-3">
                     <div class="card-header fw-semibold">CSAT Sheets</div>
                     <div class="card-body p-2">
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger py-2 small mb-2">@errorMessage</div>
+                        }
                         @if (sheetNames.Count == 0)
                         {
                             <p class="text-muted small">No sheets configured for this client.</p>
@@ -95,6 +99,7 @@
                 </div>
 
                 @* ── Attachments ── *@
+                @* ── Attachments ── *@
                 @if (attachedSheets.Count > 0)
                 {
                     <div class="card mb-3">
@@ -112,7 +117,7 @@
                         </div>
                     </div>
                 }
-
+                    
                 @* ── Email Form ── *@
                 <div class="card">
                     <div class="card-header fw-semibold">Send Email</div>
@@ -205,7 +210,6 @@
     {
         clientNames = CsatService.GetClientNames();
         emailFrom = CsatService.GetDefaultFromEmail();
-        emailSubject = CsatService.GetDefaultSubject();
     }
 
     private async Task OnClientChanged(ChangeEventArgs e)
@@ -222,8 +226,8 @@
         // Pre-populate email fields from config
         emailFrom = CsatService.GetDefaultFromEmail();
         emailTo = CsatService.GetClientEmail(selectedClient);
-        emailSubject = CsatService.GetDefaultSubject();
-        emailBody = string.Empty;
+        emailSubject = CsatService.GetClientSubject(selectedClient);
+        emailBody = CsatService.GetClientEmailBody(selectedClient);
 
         // Auto-generate PDFs for all sheets
         if (sheetNames.Count > 0)
@@ -233,21 +237,32 @@
             {
                 generatingSheet = sheet;
                 StateHasChanged();
+
+                string? generatedUrl = null;
                 await Task.Run(() =>
                 {
                     try
                     {
-                        var url = CsatService.GenerateSheetPdf(selectedClient, sheet);
-                        generatedPdfs[sheet] = url;
+                        generatedUrl = CsatService.GenerateSheetPdf(selectedClient, sheet);
                     }
                     catch (Exception ex)
                     {
                         errorMessage = $"Error generating PDF for '{sheet}': {ex.Message}";
                     }
                 });
+
+                // Update dictionary on the Blazor context after Task.Run returns
+                if (generatedUrl != null)
+                {
+                    generatedPdfs[sheet] = generatedUrl;
+                    attachedSheets.Add(sheet); // auto-check the sheet
+                }
+
+                StateHasChanged(); // reveal badge + checkbox for this sheet immediately
             }
             generatingSheet = string.Empty;
             isGenerating = false;
+            StateHasChanged();
         }
     }
 

@@ -49,9 +49,7 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseAntiforgery();
 
 // Serve dynamically generated files (chart images, PDFs) from wwwroot/downloads
-var downloadsPath = Path.Combine(AppContext.BaseDirectory, "wwwroot", "downloads");
-if (!Directory.Exists(downloadsPath))
-    Directory.CreateDirectory(downloadsPath);
+var downloadsPath = app.Services.GetRequiredService<IOptions<AppSettings>>().Value.TempPath;
 
 app.UseStaticFiles(new StaticFileOptions
 {

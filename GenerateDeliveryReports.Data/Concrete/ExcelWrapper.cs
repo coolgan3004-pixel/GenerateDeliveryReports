@@ -1,8 +1,11 @@
 using GenerateDeliveryReports.Data.Extensions;
 using GenerateDeliveryReports.Models;
+using iText.Html2pdf;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
+using System.Drawing;
 using System.Reflection;
+using System.Text;
 
 namespace GenerateDeliveryReports.Data.Concrete;
 
@@ -210,6 +213,87 @@ public class ExcelWrapper : IWrapper
         var ws = _package!.Workbook.Worksheets[sheetName];
         ws!.DeleteRow(row);
     }
+
+    public List<string> GeneratePdfFileFromWorkSheets(string folderPath,string[] sheetNames,int startCol,int endCol)
+        {
+           
+           
+            var attachments = new List<string>();
+            foreach (var sheet in sheetNames)
+            {
+                var htmlPath = System.IO.Path.Combine(folderPath, $"{sheet}.html");
+                var worksheet = _package.Workbook.Worksheets[sheet];
+                var sb = new StringBuilder();
+                var outputPath = System.IO.Path.Combine(folderPath, $"{sheet}.pdf");
+
+                
+
+                sb.Append("<html><body><table border='1' style='border-collapse:collapse'>");
+
+                for (int row = worksheet.Dimension.Start.Row; row <= worksheet.Dimension.End.Row; row++)
+                {
+
+                    var listValues = new List<KeyValuePair<string, string>>();
+                    var sbTemp = new StringBuilder();
+                    for (int col = startCol; col <= endCol; col++)
+                    {
+                        var cell = worksheet.Cells[row, col];
+                        var cellValue = cell.Text;
+                        string rgb = "";
+                        try
+                        {
+                           rgb = string.IsNullOrEmpty(cell.Style.Fill.BackgroundColor.Rgb) ? string.Empty : ColorTranslator.FromHtml($"#{cell.Style.Fill.BackgroundColor.Rgb}").Name;
+                        }
+                        catch (Exception ex) {
+                            var xx = ex.Message;
+                        }
+                        listValues.Add(new KeyValuePair<string, string>(cellValue, rgb.Replace("ff" , "")));
+                        //sb.Append($"<td>{cellValue}</td>");
+                    }
+                    if (listValues.Any(x => !string.IsNullOrEmpty(x.Key)))
+                    {
+                        sb.Append("<tr>");
+                        foreach (var item in listValues)
+                        {
+                            if (!string.IsNullOrEmpty(item.Value) && item.Value != "White" )
+                            {
+                                var style = $"style=\"background-color: #{item.Value};color:white;\"";
+                                sb.Append($"<td {style}>{item.Key}</td>");
+                            }
+                            else
+                                sb.Append($"<td>{item.Key}</td>");
+
+                        }
+                        sb.Append("</tr>");
+                    }
+
+                }
+
+                sb.Append("</table></body></html>");
+                File.WriteAllText(htmlPath, sb.ToString());
+
+
+                using (FileStream htmlSource = File.Open(htmlPath, FileMode.Open))
+                using (FileStream pdfDest = File.Open(outputPath, FileMode.Create))
+                {
+                    HtmlConverter.ConvertToPdf(htmlSource, pdfDest);
+                    attachments.Add(outputPath);       
+                }
+
+                /*var browserFetcher = new BrowserFetcher();
+                browserFetcher.DownloadAsync().GetAwaiter().GetResult();
+
+                var browser = Puppeteer.LaunchAsync(new LaunchOptions { Headless = true }).GetAwaiter().GetResult();
+                var page = browser.NewPageAsync().GetAwaiter().GetResult();
+
+                page.SetContentAsync(File.ReadAllTextAsync(htmlPath).GetAwaiter().GetResult());
+                page.PdfAsync(outputPath).GetAwaiter().GetResult();
+
+                browser.CloseAsync().GetAwaiter().GetResult();*/
+            }
+            return attachments;
+
+        }
 
     public void Save()
     {

@@ -346,7 +346,12 @@ public partial class DataProcessor : IDataProcessor
         return returnValue;
     }
 
-   
+   public string[] GeneratePDFFromWorkSheets(string folderPath, string[] sheetNames, int startCol, int endCol)
+    {
+        var excelWrapper = new ExcelWrapper();
+        var pdfPaths = excelWrapper.GeneratePdfFileFromWorkSheets(folderPath, sheetNames, startCol, endCol).ToArray();
+        return pdfPaths;
+    }
 
     public (bool bReturn, string pdfPath) GeneratePresentation(ReportDataParameters reportParams, bool generatePdf = true)
     {

@@ -1,6 +1,7 @@
+using GenerateDeliveryReports.Data.Concrete;
 using GenerateDeliveryReports.Models;
 using Microsoft.Extensions.Options;
-using Spire.Xls;
+using OfficeOpenXml;
 
 namespace GenerateDeliveryReports.Data.Services;
 
@@ -20,29 +21,29 @@ public class CsatService
     {
         var client = _settings.CSAT.Clients
             .FirstOrDefault(c => c.ClientName == clientName);
-        return client?.SheetNames ?? [];
+        return client?.SurveySheets ?? [];
     }
 
-    public string GetDefaultFromEmail() => _settings.CSAT.FromEmailAddress;
-    public string GetDefaultSubject() => _settings.CSAT.Subject;
+    private CsatClient? GetClient(string clientName) =>
+        _settings.CSAT.Clients.FirstOrDefault(c => c.ClientName == clientName);
 
-    public string GetClientEmail(string clientName) =>
-        _settings.CSAT.Clients
-            .FirstOrDefault(c => c.ClientName == clientName)?.ClientEmailAddress ?? string.Empty;
+    public string GetDefaultFromEmail() => _settings.CSAT.FromEmailAddress;
+    public string GetClientEmail(string clientName) => GetClient(clientName)?.ClientEmailAddress ?? string.Empty;
+    public string GetClientSubject(string clientName) => GetClient(clientName)?.ClientEmailSubject ?? string.Empty;
+    public string GetClientEmailBody(string clientName) => GetClient(clientName)?.ClientEmailBody ?? string.Empty;
 
     private string ResolveExcelPath(string clientName)
     {
-        var client = _settings.CSAT.Clients
-            .FirstOrDefault(c => c.ClientName == clientName)
+        var client = GetClient(clientName)
             ?? throw new InvalidOperationException($"Client '{clientName}' not found.");
 
         var folder = Path.Combine(_settings.OneDriveLocation, _settings.CSAT.CSATFolder.TrimStart('\\'));
-        return Path.GetFullPath(Path.Combine(folder, client.CSATFileName));
+        return Path.GetFullPath(Path.Combine(folder, client.ClientSurveyFilePath));
     }
 
     /// <summary>
-    /// Generates a PDF for the specified sheet and returns a web-accessible relative URL.
-    /// Returns the path relative to wwwroot (e.g. /downloads/csat_SheetName.pdf).
+    /// Generates a PDF for the specified sheet via the HTML intermediary and returns
+    /// a web-accessible URL (e.g. /downloads/SheetName.pdf).
     /// </summary>
     public string GenerateSheetPdf(string clientName, string sheetName)
     {
@@ -50,28 +51,23 @@ public class CsatService
         if (!File.Exists(excelPath))
             throw new FileNotFoundException($"CSAT file not found: {excelPath}");
 
-        var safeSheet = string.Concat(sheetName.Split(Path.GetInvalidFileNameChars()));
-        var fileName = $"csat_{safeSheet}_{DateTime.Now:yyyyMMddHHmmss}.pdf";
-        var outputDir = Path.Combine(AppContext.BaseDirectory, "wwwroot", "downloads");
-        Directory.CreateDirectory(outputDir);
-        var outputPath = Path.Combine(outputDir, fileName);
+        var client = GetClient(clientName)
+            ?? throw new InvalidOperationException($"Client '{clientName}' not found.");
+        var outputDir = _settings.TempPath;
 
-        var workbook = new Workbook();
-        workbook.LoadFromFile(excelPath);
+        int startCol = client.StartColumn > 0 ? client.StartColumn : 2;
+        int endCol = client.EndColumn > 0 ? client.EndColumn : 7;
+    
 
-        // Validate the sheet exists
-        var ws = workbook.Worksheets[sheetName]
-            ?? throw new InvalidOperationException($"Sheet '{sheetName}' not found in workbook.");
+       
 
-        // Remove all other sheets so only the target sheet is exported to PDF
-        for (int i = workbook.Worksheets.Count - 1; i >= 0; i--)
-        {
-            if (workbook.Worksheets[i].Name != sheetName)
-                workbook.Worksheets.RemoveAt(i);
-        }
+        using var wrapper = new ExcelWrapper();
+        wrapper.Open(excelPath);
+        var paths = wrapper.GeneratePdfFileFromWorkSheets(outputDir, [sheetName], startCol, endCol);
 
-        workbook.SaveToFile(outputPath, Spire.Xls.FileFormat.PDF);
+        var pdfPath = paths.FirstOrDefault()
+            ?? throw new InvalidOperationException($"PDF generation failed for sheet '{sheetName}'.");
 
-        return $"/downloads/{fileName}";
+        return $"/downloads/{Path.GetFileName(pdfPath)}";
     }
 }
