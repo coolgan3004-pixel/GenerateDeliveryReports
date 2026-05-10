@@ -70,12 +70,15 @@ Write-Host "Template copied to $TemplateDestDir" -ForegroundColor Green
 # Step 4: Update template path in appsettings.json to be relative
 Write-Host "`n[4/7] Updating appsettings.json for deployment..." -ForegroundColor Yellow
 $AppSettingsPath = Join-Path $PublishDir "appsettings.json"
-$settings = Get-Content $AppSettingsPath -Raw | ConvertFrom-Json
 
-# Set template path relative to the exe
-$settings.AppSettings.SprintMetricsReportTemplatePath = "Templates\GlobalPayments-DeliveryQualitySummaryReport_Template.pptx"
-
-$settings | ConvertTo-Json -Depth 10 | Set-Content $AppSettingsPath -Encoding UTF8
+# Use targeted string replacement instead of ConvertFrom-Json → ConvertTo-Json to avoid
+# PowerShell 5.1 silently dropping deeply-nested structures (e.g. the CSAT Clients array).
+$content = Get-Content $AppSettingsPath -Raw
+$newTemplatePath = 'Templates\\GlobalPayments-DeliveryQualitySummaryReport_Template.pptx'
+$content = $content -replace '(?<="SprintMetricsReportTemplatePath"\s*:\s*")[^"]*(?=")', $newTemplatePath
+# Clear the hardcoded dev-machine path so the app uses its built-in fallback (wwwroot/worker-summary.html)
+$content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")', ''
+[System.IO.File]::WriteAllText($AppSettingsPath, $content, [System.Text.Encoding]::UTF8)
 Write-Host "appsettings.json updated." -ForegroundColor Green
 Write-Host "  NOTE: Update 'OneDriveLocation' in appsettings.json on the target machine." -ForegroundColor Magenta
 
