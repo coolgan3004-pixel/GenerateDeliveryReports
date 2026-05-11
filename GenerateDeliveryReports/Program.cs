@@ -10,16 +10,20 @@ using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Kestrel: HTTP only, listen on all interfaces so other machines on the LAN can connect
-builder.WebHost.UseUrls("http://*:5158");
+// Kestrel: HTTP only on a fixed port — but only when running standalone (not under IIS).
+// Under IIS in-process hosting, UseUrls overrides the IIS-assigned binding and breaks the app.
+if (!builder.Environment.IsProduction() || string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APP_POOL_ID")))
+{
+    builder.WebHost.UseUrls("http://*:5158");
+}
 
-// Serilog
-var logDir = Path.Combine(AppContext.BaseDirectory, "LogFiles");
-if (!Directory.Exists(logDir))
-    Directory.CreateDirectory(logDir);
+// Serilog — log directory comes from CommonFolderPath when configured, falls back to exe folder
 builder.Host.UseSerilog((ctx, cfg) =>
-    cfg.WriteTo.File(Path.Combine(logDir, "log.txt"), rollingInterval: RollingInterval.Day)
-       .WriteTo.Console());
+{
+    var settings = ctx.Configuration.GetSection("AppSettings").Get<AppSettings>() ?? new AppSettings();
+    cfg.WriteTo.File(Path.Combine(settings.LogFilesPath, "log.txt"), rollingInterval: RollingInterval.Day)
+       .WriteTo.Console();
+});
 
 // Add services to the container.
 builder.Services.AddRazorComponents()

@@ -53,12 +53,12 @@ Write-Host "============================================" -ForegroundColor Cyan
 
 # Step 1: Clean previous publish output
 if (Test-Path $PublishDir) {
-    Write-Host "`n[1/6] Cleaning previous publish output..." -ForegroundColor Yellow
+    Write-Host "`n[1/8] Cleaning previous publish output..." -ForegroundColor Yellow
     Remove-Item -Recurse -Force $PublishDir
 }
 
 # Step 2: Publish self-contained
-Write-Host "`n[2/6] Publishing ($Configuration | $Runtime | self-contained)..." -ForegroundColor Yellow
+Write-Host "`n[2/8] Publishing ($Configuration | $Runtime | self-contained)..." -ForegroundColor Yellow
 & $dotnet publish $ProjectPath -c $Configuration -r $Runtime --self-contained -o $PublishDir
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Publish failed." -ForegroundColor Red
@@ -67,14 +67,14 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Publish succeeded." -ForegroundColor Green
 
 # Step 3: Copy PPTX template
-Write-Host "`n[3/7] Copying report template..." -ForegroundColor Yellow
+Write-Host "`n[3/8] Copying report template..." -ForegroundColor Yellow
 $TemplateDest = Join-Path $PublishDir "Templates"
 if (-not (Test-Path $TemplateDest)) { New-Item -ItemType Directory -Path $TemplateDest | Out-Null }
 Copy-Item -Path (Join-Path $TemplateSrc "*") -Destination $TemplateDest -Force
 Write-Host "Templates copied." -ForegroundColor Green
 
 # Step 4: Copy workeremailsettings.json (gitignored local secrets file)
-Write-Host "`n[4/7] Copying workeremailsettings.json..." -ForegroundColor Yellow
+Write-Host "`n[4/8] Copying workeremailsettings.json..." -ForegroundColor Yellow
 $EmailSettingsSrc = Join-Path $PSScriptRoot "GenerateDeliveryReports.Worker\workeremailsettings.json"
 if (Test-Path $EmailSettingsSrc) {
     Copy-Item -Path $EmailSettingsSrc -Destination $PublishDir -Force
@@ -84,8 +84,23 @@ if (Test-Path $EmailSettingsSrc) {
     Write-Host "         Create it manually on the target machine with the SendGrid API key." -ForegroundColor Magenta
 }
 
-# Step 5: Stop service if running
-Write-Host "`n[5/7] Stopping service '$ServiceName' (if running)..." -ForegroundColor Yellow
+# Step 5: Patch appsettings.json (blank machine-specific paths)
+Write-Host "`n[5/8] Patching appsettings.json (clearing machine-specific paths)..." -ForegroundColor Yellow
+$WorkerSettingsPath = Join-Path $PublishDir "appsettings.json"
+if (Test-Path $WorkerSettingsPath) {
+    $wcontent = Get-Content $WorkerSettingsPath -Raw
+    $wcontent = $wcontent -replace '(?<="SprintMetricsReportTemplatePath"\s*:\s*")[^"]*(?=")', ''
+    $wcontent = $wcontent -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")', ''
+    $wcontent = $wcontent -replace '(?<="CommonFolderPath"\s*:\s*")[^"]*(?=")', ''
+    $wcontent = $wcontent -replace '(?<="OneDriveLocation"\s*:\s*")[^"]*(?=")', ''
+    [System.IO.File]::WriteAllText($WorkerSettingsPath, $wcontent, [System.Text.Encoding]::UTF8)
+    Write-Host "appsettings.json patched." -ForegroundColor Green
+} else {
+    Write-Host "WARNING: appsettings.json not found in publish output." -ForegroundColor Red
+}
+
+# Step 6: Stop service if running
+Write-Host "`n[6/8] Stopping service '$ServiceName' (if running)..." -ForegroundColor Yellow
 $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
 if ($svc) {
     if ($svc.Status -ne 'Stopped') {
@@ -99,8 +114,8 @@ if ($svc) {
     Write-Host "Service not yet registered -- will create after copy." -ForegroundColor Gray
 }
 
-# Step 6: Copy to target
-Write-Host "`n[6/7] Deploying to $TargetPath ..." -ForegroundColor Yellow
+# Step 7: Copy to target
+Write-Host "`n[7/8] Deploying to $TargetPath ..." -ForegroundColor Yellow
 if (-not (Test-Path $TargetPath)) { New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null }
 Copy-Item -Path (Join-Path $PublishDir "*") -Destination $TargetPath -Recurse -Force
 Write-Host "Files deployed." -ForegroundColor Green
@@ -138,7 +153,7 @@ if (-not [string]::IsNullOrWhiteSpace($ServiceAccount)) {
 Start-Service -Name $ServiceName
 Write-Host "Service started." -ForegroundColor Green
 #>
-Write-Host "`n[7/7] Service registration skipped -- enable Step 7 in deploy-worker.ps1 when ready." -ForegroundColor Magenta
+Write-Host "`n[8/8] Service registration skipped -- enable Step 8 in deploy-worker.ps1 when ready." -ForegroundColor Magenta
 
 # Summary
 Write-Host "`n============================================" -ForegroundColor Cyan
@@ -149,6 +164,8 @@ Write-Host "Post-deployment checklist on target machine:" -ForegroundColor Yello
 Write-Host "  1. Edit $TargetPath\appsettings.json:" -ForegroundColor White
 Write-Host "     - Set 'OneDriveLocation' to the local OneDrive sync path" -ForegroundColor White
 Write-Host "     - Set 'WorkerSummaryFilePath' to where the Blazor wwwroot is" -ForegroundColor White
+Write-Host "     - Set 'CommonFolderPath' to the shared writable folder (same as web app)" -ForegroundColor White
+Write-Host "     - Set 'SprintMetricsReportTemplatePath' to the local PPTX template path" -ForegroundColor White
 Write-Host "     - Set 'EmailSettings.Password' (or set SENDGRID_API_KEY env var)" -ForegroundColor White
 Write-Host "  2. Check service status:" -ForegroundColor White
 Write-Host "     Get-Service $ServiceName" -ForegroundColor Gray

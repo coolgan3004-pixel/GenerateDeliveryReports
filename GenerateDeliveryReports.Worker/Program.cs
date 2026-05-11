@@ -8,10 +8,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Serilog;
 
-var appDir = AppContext.BaseDirectory;
-var logDir = Path.Combine(appDir, "LogFiles");
-if (!Directory.Exists(logDir))
-    Directory.CreateDirectory(logDir);
+// Resolve log directory from CommonFolderPath when configured, otherwise fall back to exe folder
+var tempConfig = new ConfigurationBuilder()
+    .SetBasePath(AppContext.BaseDirectory)
+    .AddJsonFile("appsettings.json", optional: false)
+    .Build();
+var workerSettings = tempConfig.GetSection("AppSettings").Get<AppSettings>() ?? new AppSettings();
+var logDir = workerSettings.LogFilesPath;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.File(Path.Combine(logDir, "workerlog.txt"), rollingInterval: RollingInterval.Day)

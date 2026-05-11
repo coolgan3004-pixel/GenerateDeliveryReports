@@ -78,6 +78,8 @@ $newTemplatePath = 'Templates\\GlobalPayments-DeliveryQualitySummaryReport_Templ
 $content = $content -replace '(?<="SprintMetricsReportTemplatePath"\s*:\s*")[^"]*(?=")', $newTemplatePath
 # Clear the hardcoded dev-machine path so the app uses its built-in fallback (wwwroot/worker-summary.html)
 $content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")', ''
+# Blank the dev-machine CommonFolderPath — must be set on the target machine
+$content = $content -replace '(?<="CommonFolderPath"\s*:\s*")[^"]*(?=")', ''
 [System.IO.File]::WriteAllText($AppSettingsPath, $content, [System.Text.Encoding]::UTF8)
 
 # Verify CSAT section survived
@@ -90,6 +92,18 @@ if ($content -notmatch '"Clients"') {
     exit 1
 }
 Write-Host "appsettings.json updated." -ForegroundColor Green
+# Enable stdout logging in web.config so IIS startup errors are visible in logs\stdout
+$WebConfigPath = Join-Path $PublishDir "web.config"
+if (Test-Path $WebConfigPath) {
+    $wc = Get-Content $WebConfigPath -Raw
+    $wc = $wc -replace 'stdoutLogEnabled="false"', 'stdoutLogEnabled="true"'
+    [System.IO.File]::WriteAllText($WebConfigPath, $wc, [System.Text.Encoding]::UTF8)
+    # Ensure the logs folder exists in publish output so IIS can write stdout
+    $logsDir = Join-Path $PublishDir "logs"
+    if (-not (Test-Path $logsDir)) { New-Item -ItemType Directory -Path $logsDir | Out-Null }
+    Write-Host "web.config: stdout logging enabled." -ForegroundColor Green
+}
+
 Write-Host "  NOTE: Update 'OneDriveLocation' in appsettings.json on the target machine." -ForegroundColor Magenta
 
 # Step 5: Stop IIS site
@@ -126,6 +140,8 @@ Write-Host ""
 Write-Host "Next steps on the target machine:" -ForegroundColor Yellow
 Write-Host "  1. Edit appsettings.json:" -ForegroundColor White
 Write-Host "     - Set 'OneDriveLocation' to the local OneDrive sync path" -ForegroundColor White
+Write-Host "     - Set 'CommonFolderPath' to a writable folder outside inetpub (e.g. D:\AppData\GenerateDeliveryReports)" -ForegroundColor White
+Write-Host "       This folder will hold LogFiles\ and downloads\ sub-folders" -ForegroundColor White
 Write-Host "  2. Run the app:" -ForegroundColor White
 Write-Host "     - Direct:  .\GenerateDeliveryReports.exe" -ForegroundColor White
 Write-Host "     - Service: sc.exe create DeliveryReports binPath=`"$TargetPath\GenerateDeliveryReports.exe`" start=auto" -ForegroundColor White
