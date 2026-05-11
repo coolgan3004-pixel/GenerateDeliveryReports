@@ -2,11 +2,30 @@ namespace GenerateDeliveryReports.Models;
 
 public class AppSettings
 {
+    public string CommonFolderPath { get; set; } = string.Empty;
+
+    /// <summary>Folder where generated PDFs and charts are written and served from /downloads.</summary>
     public string TempPath
     {
         get
         {
-            var directory = Path.Combine(AppContext.BaseDirectory, "wwwroot", "downloads");
+            var directory = string.IsNullOrWhiteSpace(CommonFolderPath)
+                ? Path.Combine(AppContext.BaseDirectory, "wwwroot", "downloads")
+                : Path.Combine(CommonFolderPath, "downloads");
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+            return directory;
+        }
+    }
+
+    /// <summary>Folder where rolling log files are written.</summary>
+    public string LogFilesPath
+    {
+        get
+        {
+            var directory = string.IsNullOrWhiteSpace(CommonFolderPath)
+                ? Path.Combine(AppContext.BaseDirectory, "LogFiles")
+                : Path.Combine(CommonFolderPath, "LogFiles");
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
             return directory;
