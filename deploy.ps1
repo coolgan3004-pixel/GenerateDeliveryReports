@@ -1,9 +1,21 @@
 # =============================================================================
-# Deploy GenerateDeliveryReports to a remote Windows machine
+# Deploy GenerateDeliveryReports (Kestrel) to a Windows machine via Task Scheduler
 # =============================================================================
 # Usage:
 #   .\deploy.ps1 -TargetPath "\\MACHINE\C$\Apps\GenerateDeliveryReports"
 #   .\deploy.ps1 -TargetPath "D:\Apps\GenerateDeliveryReports"  (local deploy)
+#   .\deploy.ps1 -TargetPath "D:\Apps\GenerateDeliveryReports" -TaskName "MyAppTask"
+#
+# The script will:
+#   1. Publish the app self-contained
+#   2. Stop the existing Task Scheduler task and kill the process (if present)
+#   3. Copy published files to TargetPath
+#   4. Register (or update) a Task Scheduler task that runs the app at system startup
+#   5. Start the task immediately
+#
+# The app binds to http://*:5158 (configured in Program.cs).
+# The task runs as SYSTEM. Ensure OneDriveLocation paths are accessible to SYSTEM,
+# or change -TaskName and configure a specific user account manually after deploy.
 # =============================================================================
 
 param(
@@ -11,8 +23,8 @@ param(
     [string]$TargetPath,
 
     [string]$Configuration = "Release",
-    [string]$Runtime = "win-x64",
-    [string]$IISSiteName = "GenerateDeliveryReports"  # Set to empty string to skip IIS restart
+    [string]$Runtime       = "win-x64",
+    [string]$TaskName      = "GenerateDeliveryReports"
 )
 
 $ErrorActionPreference = "Stop"
@@ -47,6 +59,9 @@ Write-Host "========================================" -ForegroundColor Cyan
 if (Test-Path $PublishDir) {
     Write-Host "`n[1/7] Cleaning previous publish output..." -ForegroundColor Yellow
     Remove-Item -Recurse -Force $PublishDir
+}
+else {
+    Write-Host "`n[1/7] No previous publish output to clean." -ForegroundColor Gray
 }
 
 # Step 2: Publish self-contained
@@ -92,27 +107,20 @@ if ($content -notmatch '"Clients"') {
     exit 1
 }
 Write-Host "appsettings.json updated." -ForegroundColor Green
-# Enable stdout logging in web.config so IIS startup errors are visible in logs\stdout
-$WebConfigPath = Join-Path $PublishDir "web.config"
-if (Test-Path $WebConfigPath) {
-    $wc = Get-Content $WebConfigPath -Raw
-    $wc = $wc -replace 'stdoutLogEnabled="false"', 'stdoutLogEnabled="true"'
-    [System.IO.File]::WriteAllText($WebConfigPath, $wc, [System.Text.Encoding]::UTF8)
-    # Ensure the logs folder exists in publish output so IIS can write stdout
-    $logsDir = Join-Path $PublishDir "logs"
-    if (-not (Test-Path $logsDir)) { New-Item -ItemType Directory -Path $logsDir | Out-Null }
-    Write-Host "web.config: stdout logging enabled." -ForegroundColor Green
-}
+Write-Host "  NOTE: Update 'OneDriveLocation' and 'CommonFolderPath' in appsettings.json on the target machine." -ForegroundColor Magenta
 
-Write-Host "  NOTE: Update 'OneDriveLocation' in appsettings.json on the target machine." -ForegroundColor Magenta
-
-# Step 5: Stop IIS site
-if ($IISSiteName) {
-    Write-Host "`n[5/7] Stopping IIS site '$IISSiteName'..." -ForegroundColor Yellow
-    & iisreset /stop
-    Write-Host "IIS stopped." -ForegroundColor Green
+# Step 5: Stop Task Scheduler task + kill the process to release file locks
+Write-Host "`n[5/7] Stopping task '$TaskName' (if running)..." -ForegroundColor Yellow
+$existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+if ($existingTask) {
+    Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    # Kill the host process directly so all file handles are released before the copy
+    Get-Process -Name "GenerateDeliveryReports" -ErrorAction SilentlyContinue |
+        Stop-Process -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 3
+    Write-Host "Task stopped." -ForegroundColor Green
 } else {
-    Write-Host "`n[5/7] No IIS site specified -- skipping IIS stop." -ForegroundColor Gray
+    Write-Host "Task not found -- will register after copy." -ForegroundColor Gray
 }
 
 # Step 6: Copy to target
@@ -123,26 +131,52 @@ if (-not (Test-Path $TargetPath)) {
 Copy-Item -Path (Join-Path $PublishDir "*") -Destination $TargetPath -Recurse -Force
 Write-Host "Deployed successfully to $TargetPath" -ForegroundColor Green
 
-# Step 7: Start IIS site
-if ($IISSiteName) {
-    Write-Host "`n[7/7] Starting IIS site '$IISSiteName'..." -ForegroundColor Yellow
-    & iisreset /start
-    Write-Host "IIS started." -ForegroundColor Green
+# Step 7: Register (or update) the Task Scheduler task, then start it
+Write-Host "`n[7/7] Configuring Task Scheduler task '$TaskName'..." -ForegroundColor Yellow
+$ExePath   = Join-Path $TargetPath "GenerateDeliveryReports.exe"
+$action    = New-ScheduledTaskAction -Execute $ExePath -WorkingDirectory $TargetPath
+$trigger   = New-ScheduledTaskTrigger -AtStartup
+$settings  = New-ScheduledTaskSettingsSet `
+                 -ExecutionTimeLimit (New-TimeSpan -Hours 0) `
+                 -RestartCount 3 `
+                 -RestartInterval (New-TimeSpan -Minutes 1) `
+                 -MultipleInstances IgnoreNew
+$principal = New-ScheduledTaskPrincipal `
+                 -UserId "SYSTEM" `
+                 -LogonType ServiceAccount `
+                 -RunLevel Highest
+
+$task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+if ($task) {
+    Set-ScheduledTask -TaskName $TaskName `
+        -Action $action -Trigger $trigger -Settings $settings -Principal $principal | Out-Null
+    Write-Host "Task updated." -ForegroundColor Green
 } else {
-    Write-Host "`n[7/7] No IIS site specified -- skipping IIS start." -ForegroundColor Gray
+    Register-ScheduledTask -TaskName $TaskName `
+        -Description "GenerateDeliveryReports Kestrel web application" `
+        -Action $action -Trigger $trigger -Settings $settings -Principal $principal | Out-Null
+    Write-Host "Task registered." -ForegroundColor Green
 }
+
+Start-ScheduledTask -TaskName $TaskName
+Write-Host "Task started. App should be reachable at http://<machine>:5158" -ForegroundColor Green
 
 # Summary
 Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host " Deployment Complete!" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Next steps on the target machine:" -ForegroundColor Yellow
-Write-Host "  1. Edit appsettings.json:" -ForegroundColor White
+Write-Host "Post-deployment checklist on the target machine:" -ForegroundColor Yellow
+Write-Host "  1. Edit $TargetPath\appsettings.json:" -ForegroundColor White
 Write-Host "     - Set 'OneDriveLocation' to the local OneDrive sync path" -ForegroundColor White
-Write-Host "     - Set 'CommonFolderPath' to a writable folder outside inetpub (e.g. D:\AppData\GenerateDeliveryReports)" -ForegroundColor White
+Write-Host "     - Set 'CommonFolderPath' to a writable folder (e.g. D:\AppData\GenerateDeliveryReports)" -ForegroundColor White
 Write-Host "       This folder will hold LogFiles\ and downloads\ sub-folders" -ForegroundColor White
-Write-Host "  2. Run the app:" -ForegroundColor White
-Write-Host "     - Direct:  .\GenerateDeliveryReports.exe" -ForegroundColor White
-Write-Host "     - Service: sc.exe create DeliveryReports binPath=`"$TargetPath\GenerateDeliveryReports.exe`" start=auto" -ForegroundColor White
+Write-Host "  2. Verify the task is running:" -ForegroundColor White
+Write-Host "     Get-ScheduledTask -TaskName '$TaskName'" -ForegroundColor Gray
+Write-Host "  3. Check the app is reachable:" -ForegroundColor White
+Write-Host "     Invoke-WebRequest http://localhost:5158 -UseBasicParsing" -ForegroundColor Gray
+Write-Host "  4. View application logs:" -ForegroundColor White
+Write-Host ('     Get-Content "' + $TargetPath + '\LogFiles\log*.txt" -Tail 50') -ForegroundColor Gray
+Write-Host "  5. To stop the app manually:" -ForegroundColor White
+Write-Host "     Stop-ScheduledTask -TaskName '$TaskName'" -ForegroundColor Gray
 Write-Host ""
