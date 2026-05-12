@@ -109,13 +109,17 @@ if ($content -notmatch '"Clients"') {
 Write-Host "appsettings.json updated." -ForegroundColor Green
 Write-Host "  NOTE: Update 'OneDriveLocation' and 'CommonFolderPath' in appsettings.json on the target machine." -ForegroundColor Magenta
 
+# Resolve exe path once — used in both Step 5 (process kill) and Step 7 (task registration)
+$ExePath     = Join-Path $TargetPath "GenerateDeliveryReports.exe"
+$ProcessName = [System.IO.Path]::GetFileNameWithoutExtension($ExePath)
+
 # Step 5: Stop Task Scheduler task + kill the process to release file locks
 Write-Host "`n[5/7] Stopping task '$TaskName' (if running)..." -ForegroundColor Yellow
 $existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
 if ($existingTask) {
     Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     # Kill the host process directly so all file handles are released before the copy
-    Get-Process -Name "GenerateDeliveryReports" -ErrorAction SilentlyContinue |
+    Get-Process -Name $ProcessName -ErrorAction SilentlyContinue |
         Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 3
     Write-Host "Task stopped." -ForegroundColor Green
@@ -133,7 +137,6 @@ Write-Host "Deployed successfully to $TargetPath" -ForegroundColor Green
 
 # Step 7: Register (or update) the Task Scheduler task, then start it
 Write-Host "`n[7/7] Configuring Task Scheduler task '$TaskName'..." -ForegroundColor Yellow
-$ExePath   = Join-Path $TargetPath "GenerateDeliveryReports.exe"
 $action    = New-ScheduledTaskAction -Execute $ExePath -WorkingDirectory $TargetPath
 $trigger   = New-ScheduledTaskTrigger -AtStartup
 $settings  = New-ScheduledTaskSettingsSet `
