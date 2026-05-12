@@ -2,7 +2,11 @@
 @rendermode InteractiveServer
 @using GenerateDeliveryReports.Models
 @using GenerateDeliveryReports.Data.Services
+@using GenerateDeliveryReports.Data.Interface
+@using Microsoft.Extensions.Options
 @inject CsatService CsatService
+@inject IEmailService EmailService
+@inject IOptions<AppSettings> AppOptions
 
 <PageTitle>CSAT Report</PageTitle>
 
@@ -294,13 +298,43 @@
         sendResult = string.Empty;
         StateHasChanged();
 
-        // Placeholder — wire up to email service when ready
-        await Task.Delay(500);
-        sendSuccess = false;
-        sendResult = "Email sending is not yet configured. Please set up the EmailSettings in appsettings.json.";
+        try
+        {
+            // Resolve physical paths for each attached PDF from the /downloads URL
+            var tempPath = AppOptions.Value.TempPath;
+            var attachmentPaths = attachedSheets
+                .Where(sheet => generatedPdfs.ContainsKey(sheet))
+                .Select(sheet => Path.Combine(tempPath, Path.GetFileName(generatedPdfs[sheet])))
+                .ToList();
 
-        isSending = false;
-        StateHasChanged();
+            // Convert plain-text body to HTML (preserve line breaks)
+            var htmlBody = "<pre style=\"font-family:Arial,sans-serif;font-size:14px;\">"
+                         + System.Net.WebUtility.HtmlEncode(emailBody)
+                         + "</pre>";
+
+            var parameters = new EmailParameters
+            {
+                FromEmailAddress = emailFrom,
+                ToEmailAddress   = emailTo,
+                Subject          = emailSubject,
+                Body             = htmlBody,
+                Attachments      = attachmentPaths
+            };
+
+            await Task.Run(() => EmailService.SendAsync(parameters));
+
+            sendSuccess = true;
+            sendResult  = $"Email sent successfully to {emailTo}.";
+        }
+        catch (Exception ex)
+        {
+            sendSuccess = false;
+            sendResult  = $"Failed to send email: {ex.Message}";
+        }
+        finally
+        {
+            isSending = false;
+        }
     }
 }
 

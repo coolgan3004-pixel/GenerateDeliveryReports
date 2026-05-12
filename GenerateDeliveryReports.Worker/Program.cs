@@ -31,6 +31,7 @@ try
     builder.Services.AddSerilog();
     builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
     builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
+    builder.Services.AddSingleton<IEmailService, OutlookEmailService>();
     builder.Services.AddSingleton<ReportWorker>();
 
     var host = builder.Build();

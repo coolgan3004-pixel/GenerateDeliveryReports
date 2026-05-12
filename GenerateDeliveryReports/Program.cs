@@ -36,6 +36,7 @@ builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSet
 builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
 builder.Services.AddScoped<SprintReportService>();
 builder.Services.AddScoped<CsatService>();
+builder.Services.AddScoped<IEmailService, OutlookEmailService>();
 
 var app = builder.Build();
 

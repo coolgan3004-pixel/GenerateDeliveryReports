@@ -8,12 +8,18 @@ namespace GenerateDeliveryReports.Worker;
 public class ReportWorker
 {
     private readonly IDataProcessor _dataProcessor;
+    private readonly IEmailService _emailService;
     private readonly AppSettings _appSettings;
     private readonly ILogger<ReportWorker> _logger;
 
-    public ReportWorker(IDataProcessor dataProcessor, IOptions<AppSettings> appSettings, ILogger<ReportWorker> logger)
+    public ReportWorker(
+        IDataProcessor dataProcessor,
+        IEmailService emailService,
+        IOptions<AppSettings> appSettings,
+        ILogger<ReportWorker> logger)
     {
         _dataProcessor = dataProcessor;
+        _emailService = emailService;
         _appSettings = appSettings.Value;
         _logger = logger;
     }
@@ -225,40 +231,31 @@ public class ReportWorker
             _logger.LogInformation("No results this cycle -- email skipped.");
     }
 
-    private Task SendCycleSummaryEmailAsync(string html, DateTimeOffset cycleTime)
+    private async Task SendCycleSummaryEmailAsync(string html, DateTimeOffset cycleTime)
     {
         var email = _appSettings.EmailSettings;
 
         if (email.Users.Count == 0)
         {
             _logger.LogWarning("Email not sent -- no recipients configured.");
-            return Task.CompletedTask;
+            return;
         }
 
         try
         {
-            var outlookType = Type.GetTypeFromProgID("Outlook.Application")
-                ?? throw new InvalidOperationException("Outlook is not installed or not registered on this machine.");
+            var parameters = new EmailParameters
+            {
+                ToEmailAddress = string.Join(";", email.Users.Select(u => u.Email)),
+                Subject        = $"Delivery Report Cycle Summary - {cycleTime:yyyy-MM-dd HH:mm}",
+                Body           = html
+            };
 
-            dynamic outlook = Activator.CreateInstance(outlookType)!;
-            dynamic mail = outlook.CreateItem(0); // 0 = olMailItem
-
-            mail.Subject = $"Delivery Report Cycle Summary - {cycleTime:yyyy-MM-dd HH:mm}";
-            mail.HTMLBody = html;
-
-            foreach (var u in email.Users)
-                mail.Recipients.Add(u.Email);
-
-            mail.Recipients.ResolveAll();
-            mail.Send();
-
-            _logger.LogInformation("Cycle summary email sent via Outlook to {Count} recipient(s).", email.Users.Count);
+            await _emailService.SendAsync(parameters);
+            _logger.LogInformation("Cycle summary email sent to {Count} recipient(s).", email.Users.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email via Outlook COM.");
+            _logger.LogError(ex, "Failed to send cycle summary email.");
         }
-
-        return Task.CompletedTask;
     }
 }
