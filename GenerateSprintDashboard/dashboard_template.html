@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Delivery Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f4f5f7;--surface:#fff;--border:#e3e5ea;
+  --text:#111827;--text2:#4b5563;--text3:#9ca3af;
+  --green:#059669;--green-bar:#10b981;--green-bg:#ecfdf5;--green-border:#a7f3d0;
+  --red:#dc2626;--red-bg:#fef2f2;--red-border:#fecaca;
+  --orange:#d97706;--orange-bg:#fffbeb;--orange-border:#fde68a;
+  --blue:#2563eb;--blue-bg:#eff6ff;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;
+  --gray:#6b7280;--gray-bg:#f3f4f6;
+  --dark:#1f2937;
+}
+body{font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 32px 48px}
+.mono{font-family:'JetBrains Mono',monospace}
+
+.header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:24px}
+.header h1{font-size:24px;font-weight:700;letter-spacing:-0.5px}
+.header .date{font-size:13px;color:var(--text3);font-weight:500}
+
+.metrics{display:flex;gap:16px;margin-bottom:24px}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 24px;flex:1}
+.metric-card .label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:4px}
+.metric-card .value{font-size:32px;font-weight:700}
+.metric-card .value.red{color:var(--red)}
+
+.err-banner{background:var(--red-bg);border:1px solid var(--red-border);border-radius:10px;padding:14px 18px;margin-bottom:20px}
+.err-banner-title{font-size:13px;font-weight:700;color:#991b1b;margin-bottom:8px}
+.err-table{width:100%;border-collapse:collapse;font-size:12px}
+.err-table td{padding:5px 10px;border-bottom:1px solid var(--red-border)}
+.err-table .err-app{font-weight:600;color:#991b1b;white-space:nowrap;width:160px}
+.err-table .err-reason{color:#92400e}
+
+.filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.fbtn{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:7px 18px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .12s}
+.fbtn:hover{border-color:#111;color:#111}
+.fbtn.on{background:var(--dark);border-color:var(--dark);color:#fff}
+
+.group{margin-bottom:28px}
+.group-hdr{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding-left:4px}
+.group-dates{font-size:14px;font-weight:600;color:var(--text)}
+.group-dl{font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px}
+.dl-urgent{background:var(--red-bg);color:var(--red)}
+.dl-soon{background:var(--orange-bg);color:var(--orange)}
+.dl-ok{background:var(--green-bg);color:var(--green)}
+.group-count{font-size:11px;color:var(--text3);margin-left:auto}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;border-left:4px solid var(--border);transition:box-shadow .15s}
+.card:hover{box-shadow:0 1px 6px rgba(0,0,0,.04)}
+.card.has-issues{border-left-color:var(--red)}
+
+.card-body{padding:14px 18px 10px}
+.card-row1{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.card-info{min-width:150px}
+.card-name{font-size:15px;font-weight:700;line-height:1.2}
+.card-sprint{font-size:12px;color:var(--text3);margin-top:2px}
+
+.card-progress{flex:1;min-width:180px;max-width:340px}
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.prog-label{font-size:11px;font-weight:600;color:var(--text2);min-width:40px}
+.prog-bar{flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .4s ease}
+.prog-fill-done{background:var(--green-bar)}
+.prog-fill-time{background:#94a3b8}
+.prog-pct{font-size:11px;font-weight:600;min-width:38px;text-align:right;color:var(--text2)}
+
+.card-counts{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.cnt-pill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;transition:all .12s;border:1.5px solid transparent;user-select:none;white-space:nowrap}
+.cnt-pill:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.06)}
+.cnt-pill.active{border-width:2px}
+.cnt-done{background:var(--green-bg);color:var(--green)}.cnt-done.active{border-color:var(--green)}
+.cnt-test{background:var(--blue-bg);color:var(--blue)}.cnt-test.active{border-color:var(--blue)}
+.cnt-rev{background:var(--purple-bg);color:var(--purple)}.cnt-rev.active{border-color:var(--purple)}
+.cnt-dev{background:var(--orange-bg);color:var(--orange)}.cnt-dev.active{border-color:var(--orange)}
+.cnt-ns{background:var(--gray-bg);color:var(--gray)}.cnt-ns.active{border-color:var(--gray)}
+.cnt-all{background:#f0f0f0;color:var(--text2);border:1px dashed var(--border)}.cnt-all.active{border-color:var(--text2);border-style:solid}
+
+/* FLAGS ROW - compact alert/defect/overrun chips */
+.flags-row{padding:2px 18px 10px;display:flex;gap:5px;flex-wrap:wrap}
+.flag-chip{font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px;cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:4px;user-select:none;border:1.5px solid transparent}
+.flag-chip:hover{transform:translateY(-1px);box-shadow:0 2px 4px rgba(0,0,0,.06)}
+.flag-chip.active{border-width:2px}
+.flag-defect{background:var(--red-bg);color:var(--red)}.flag-defect.active{border-color:var(--red)}
+.flag-overrun{background:var(--orange-bg);color:var(--orange)}.flag-overrun.active{border-color:var(--orange)}
+.flag-blocked{background:var(--orange-bg);color:var(--orange)}.flag-blocked.active{border-color:var(--orange)}
+.flag-atrisk{background:var(--red-bg);color:var(--red)}.flag-atrisk.active{border-color:var(--red)}
+.flag-review{background:#fefce8;color:#a16207}.flag-review.active{border-color:#a16207}
+.flag-ok{background:var(--green-bg);color:var(--green)}
+
+/* DRILL DOWN */
+.drill{display:none;border-top:1px solid var(--bg);padding:10px 18px 14px;background:#fafbfc}
+.drill.open{display:block;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.drill-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px}
+.drill-row{display:flex;gap:10px;padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:3px;font-size:12px;align-items:center}
+.drill-row .d-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--blue);font-weight:500;min-width:72px}
+.drill-row .d-desc{flex:1;color:var(--text2)}
+.drill-row .d-sp{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);min-width:32px;text-align:center}
+.drill-row .d-dev{font-size:11px;color:var(--text3);min-width:60px;text-align:right}
+.drill-row .d-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--gray-bg);color:var(--text2);white-space:nowrap;min-width:70px;text-align:center}
+.drill-row .d-meta{font-size:10px;color:var(--text3);min-width:60px;text-align:right}
+.drill-row .d-flag{font-size:10px;color:var(--orange);margin-left:4px}
+.drill-row .d-sev{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:4px}
+.d-sev-high{background:var(--red);color:#fff}
+.d-sev-med{background:var(--orange);color:#fff}
+
+@media(max-width:768px){
+  body{padding:16px 12px 32px}
+  .card-row1{flex-direction:column;align-items:flex-start}
+  .card-progress{max-width:100%}
+  .card-counts{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Engineering Delivery Overview</h1>
+  <span class="date" id="genDate"></span>
+</div>
+<div id="missingBanner"></div>
+<div class="metrics" id="metricsBar"></div>
+<div class="filters" id="filtersBar"></div>
+<div id="content"></div>
+
+<script>
+const D = %%DATA%%;
+const TODAY = new Date(D.today);
+
+const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtShort(s){if(!s)return'';const d=new Date(s+'T00:00:00');return months[d.getMonth()]+' '+d.getDate()}
+function fmtFull(s){if(!s)return'';const d=new Date(s+'T00:00:00');return months[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()}
+function weekEnd(d){const e=new Date(d);const diff=5-e.getDay();e.setDate(e.getDate()+(diff<0?diff+7:diff));return e}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r}
+const thisWE=weekEnd(TODAY),nextWE=addDays(thisWE,7),w3E=addDays(nextWE,7);
+function getBucket(endStr){const d=new Date(endStr+'T00:00:00');if(d<=thisWE)return'this';if(d<=nextWE)return'next';if(d<=w3E)return'week3';return'later'}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+const catMap={Completed:'done',Testing:'test',Review:'rev','In Progress':'dev','Not Started':'ns'};
+const catLabels={done:'Done',test:'Test',rev:'Rev',dev:'Dev',ns:'NS'};
+const catCls={done:'cnt-done',test:'cnt-test',rev:'cnt-rev',dev:'cnt-dev',ns:'cnt-ns'};
+const catOrder=['Completed','Testing','Review','In Progress','Not Started'];
+
+let activeFilter='all';
+
+document.getElementById('genDate').textContent='Generated: '+fmtFull(D.today);
+
+if(D.errors && D.errors.length){
+  let rows=D.errors.map(e=>`<tr><td class="err-app">${esc(e.app)}</td><td class="err-reason">${esc(e.reason)}</td></tr>`).join('');
+  document.getElementById('missingBanner').innerHTML=`<div class="err-banner"><div class="err-banner-title">⚠ ${D.errors.length} Application${D.errors.length>1?'s':''} Not Reporting</div><table class="err-table">${rows}</table></div>`;
+}
+
+const totalTeams=D.teams.length;
+const totalDefects=D.teams.reduce((s,t)=>s+t.defect_count,0);
+document.getElementById('metricsBar').innerHTML=`
+  <div class="metric-card"><div class="label">Teams</div><div class="value">${totalTeams}</div></div>
+  <div class="metric-card"><div class="label">Defects</div><div class="value ${totalDefects?'red':''}">${totalDefects}</div></div>`;
+
+const gMap={};
+D.teams.forEach((t,i)=>{t._i=i;const k=t.start+'|'+t.end;(gMap[k]=gMap[k]||[]).push(t)});
+const gKeys=Object.keys(gMap).sort((a,b)=>{const ae=a.split('|')[1],be=b.split('|')[1];return ae<be?-1:ae>be?1:a<b?-1:1});
+
+const bc={this:0,next:0,week3:0,later:0};
+gKeys.forEach(k=>{const e=k.split('|')[1];bc[getBucket(e)]+=gMap[k].length});
+
+document.getElementById('filtersBar').innerHTML=`
+  <button class="fbtn on" data-f="all" onclick="setF(this)">All Teams</button>
+  <button class="fbtn" data-f="atrisk" onclick="setF(this)">At Risk</button>
+  <button class="fbtn" data-f="defects" onclick="setF(this)">Defects Only</button>
+  <button class="fbtn" data-f="this" onclick="setF(this)">This Week (${bc.this})</button>
+  <button class="fbtn" data-f="next" onclick="setF(this)">Next Week (${bc.next})</button>
+  <button class="fbtn" data-f="week3" onclick="setF(this)">Week After (${bc.week3})</button>
+  ${bc.later?`<button class="fbtn" data-f="later" onclick="setF(this)">Later (${bc.later})</button>`:''}`;
+
+function setF(btn){document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');activeFilter=btn.dataset.f;applyFilter()}
+function applyFilter(){document.querySelectorAll('.group').forEach(g=>{
+  const cards=g.querySelectorAll('.card');let any=false;
+  cards.forEach(c=>{
+    const wb=c.dataset.wb,hi=c.dataset.hasIssues==='1',hd=c.dataset.hasDefects==='1';
+    let show=true;
+    if(activeFilter==='this'&&wb!=='this')show=false;
+    else if(activeFilter==='next'&&wb!=='next')show=false;
+    else if(activeFilter==='week3'&&wb!=='week3')show=false;
+    else if(activeFilter==='later'&&wb!=='later')show=false;
+    else if(activeFilter==='atrisk'&&!hi)show=false;
+    else if(activeFilter==='defects'&&!hd)show=false;
+    c.style.display=show?'':'none';if(show)any=true;
+  });g.style.display=any?'':'none';
+})}
+
+// Categorize alerts per team
+D.teams.forEach(t=>{
+  t._defects=t.alerts.filter(a=>a.type==='DEFECT');
+  t._overruns=t.alerts.filter(a=>a.type==='OVERRUN');
+  t._blocked=t.alerts.filter(a=>a.type==='BLOCKED');
+  t._atrisk=t.alerts.filter(a=>a.type==='AT RISK');
+  t._reviews=t.alerts.filter(a=>a.type==='REVIEW');
+});
+
+const content=document.getElementById('content');
+gKeys.forEach(gk=>{
+  const [gs,ge]=gk.split('|');
+  const teams=gMap[gk];
+  const dLeft=Math.round((new Date(ge+'T00:00:00')-TODAY)/864e5);
+  const dlCls=dLeft<=0?'dl-urgent':dLeft<=3?'dl-soon':'dl-ok';
+  const dlText=dLeft<=0?'Ends Today':dLeft===1?'1 day left':`${dLeft} days left`;
+  const wb=getBucket(ge);
+
+  const grp=document.createElement('div');
+  grp.className='group';
+
+  let html=`<div class="group-hdr">
+    <span class="group-dates">${fmtShort(gs)} → ${fmtShort(ge)}</span>
+    <span class="group-dl ${dlCls}">${dlText}</span>
+    <span class="group-count">${teams.length} team${teams.length>1?'s':''}</span>
+  </div>`;
+
+  teams.forEach(t=>{
+    const idx=t._i;
+    const hasDefects=t.defect_count>0;
+    const hasIssues=t._atrisk.length>0||t._defects.length>0||t._overruns.length>0||t._blocked.length>0;
+    const cardCls=hasIssues?'has-issues':'';
+
+    // Status count pills
+    let pills='';
+    catOrder.forEach(cat=>{
+      const n=t.counts[cat]||0;
+      const key=catMap[cat];
+      pills+=`<span class="cnt-pill ${catCls[key]}" data-idx="${idx}" data-cat="${cat}" onclick="toggleDrill(this,'status')">${n} ${catLabels[key]}</span>`;
+    });
+    // "All" pill to show every story
+    pills+=`<span class="cnt-pill cnt-all" data-idx="${idx}" data-cat="All" onclick="toggleDrill(this,'status')">${t.total} All</span>`;
+
+    // Flag chips — compact indicators for defects, overruns, blocked, at-risk, reviews
+    let flags='';
+    if(t._defects.length) flags+=`<span class="flag-chip flag-defect" data-idx="${idx}" data-flag="defect" onclick="toggleDrill(this,'flag')">⬤ ${t._defects.length} Defect${t._defects.length>1?'s':''}</span>`;
+    if(t._overruns.length) flags+=`<span class="flag-chip flag-overrun" data-idx="${idx}" data-flag="overrun" onclick="toggleDrill(this,'flag')">⬤ ${t._overruns.length} Overrun${t._overruns.length>1?'s':''}</span>`;
+    if(t._blocked.length) flags+=`<span class="flag-chip flag-blocked" data-idx="${idx}" data-flag="blocked" onclick="toggleDrill(this,'flag')">⬤ ${t._blocked.length} Blocked</span>`;
+    if(t._atrisk.length) flags+=`<span class="flag-chip flag-atrisk" data-idx="${idx}" data-flag="atrisk" onclick="toggleDrill(this,'flag')">⬤ At Risk</span>`;
+    if(t._reviews.length) flags+=`<span class="flag-chip flag-review" data-idx="${idx}" data-flag="review" onclick="toggleDrill(this,'flag')">⬤ ${t._reviews.length} Review Note${t._reviews.length>1?'s':''}</span>`;
+    if(!flags) flags='<span class="flag-chip flag-ok">✓ On Track</span>';
+
+    html+=`<div class="card ${cardCls}" data-wb="${wb}" data-has-issues="${hasIssues?'1':'0'}" data-has-defects="${hasDefects?'1':'0'}">
+      <div class="card-body">
+        <div class="card-row1">
+          <div class="card-info">
+            <div class="card-name">${esc(t.app)}</div>
+            <div class="card-sprint">${esc(t.sprint)}</div>
+          </div>
+          <div class="card-progress">
+            <div class="prog-row">
+              <span class="prog-label">Done:</span>
+              <div class="prog-bar"><div class="prog-fill prog-fill-done" style="width:${t.done_pct}%"></div></div>
+              <span class="prog-pct">${t.done_pct}%</span>
+            </div>
+            <div class="prog-row">
+              <span class="prog-label">Time:</span>
+              <div class="prog-bar"><div class="prog-fill prog-fill-time" style="width:${Math.min(100,t.pct_elapsed)}%"></div></div>
+              <span class="prog-pct">${Math.min(100,t.pct_elapsed)}%</span>
+            </div>
+          </div>
+          <div class="card-counts">${pills}</div>
+        </div>
+      </div>
+      <div class="flags-row">${flags}</div>
+      <div class="drill" id="drill-${idx}"></div>
+    </div>`;
+  });
+
+  grp.innerHTML=html;
+  content.appendChild(grp);
+});
+
+function toggleDrill(chip, kind){
+  const idx=chip.dataset.idx;
+  const panel=document.getElementById('drill-'+idx);
+  const team=D.teams[idx];
+  const card=chip.closest('.card');
+
+  // If same chip clicked again, close
+  if(chip.classList.contains('active')&&panel.classList.contains('open')){
+    chip.classList.remove('active');panel.classList.remove('open');return;
+  }
+
+  // Deactivate all chips in this card
+  card.querySelectorAll('.cnt-pill,.flag-chip').forEach(p=>p.classList.remove('active'));
+  chip.classList.add('active');
+
+  let html='';
+
+  if(kind==='status'){
+    const cat=chip.dataset.cat;
+    const stories=cat==='All'?team.stories:team.stories.filter(s=>s.status===cat);
+    html=`<div class="drill-title">${cat==='All'?'All Stories':cat} (${stories.length})</div>`;
+    if(!stories.length){html+='<div style="font-size:12px;color:var(--text3);padding:4px 8px">No stories</div>';}
+    stories.forEach(s=>{
+      const flags=(s.review_flags&&s.review_flags.length)?`<span class="d-flag">⚠ ${s.review_flags.length} review</span>`:'';
+      const overrun=(s.act_sp&&s.est_sp&&s.act_sp>s.est_sp*1.5)?`<span class="d-flag">↑ ${s.act_sp}/${s.est_sp} SP</span>`:'';
+      const statusTag=cat==='All'?`<span class="d-status">${esc(s.status)}</span>`:'';
+      html+=`<div class="drill-row">
+        <span class="d-id">${esc(s.id)}</span>
+        <span class="d-desc">${esc(s.desc||'')}${flags}${overrun}</span>
+        ${statusTag}
+        <span class="d-sp">${s.est_sp||'-'}</span>
+        <span class="d-dev">${esc(s.dev||'')}</span>
+      </div>`;
+    });
+  } else {
+    const flag=chip.dataset.flag;
+    let items=[];
+    let title='';
+
+    if(flag==='defect'){
+      title=`Defects (${team._defects.length})`;
+      items=team._defects;
+    } else if(flag==='overrun'){
+      title=`Overruns (${team._overruns.length})`;
+      items=team._overruns;
+    } else if(flag==='blocked'){
+      title=`Blocked (${team._blocked.length})`;
+      items=team._blocked;
+    } else if(flag==='atrisk'){
+      title='At Risk';
+      items=team._atrisk;
+    } else if(flag==='review'){
+      title=`Review Notes (${team._reviews.length})`;
+      items=team._reviews;
+    }
+
+    html=`<div class="drill-title">${title}</div>`;
+    items.forEach(a=>{
+      const sevCls=a.sev==='critical'||a.sev==='high'?'d-sev-high':'d-sev-med';
+      html+=`<div class="drill-row">
+        <span class="d-id"><span class="d-sev ${sevCls}">${a.type}</span></span>
+        <span class="d-desc">${esc(a.msg)}</span>
+      </div>`;
+    });
+  }
+
+  panel.innerHTML=html;
+  panel.classList.add('open');
+}
+</script>
+</body>
+</html>

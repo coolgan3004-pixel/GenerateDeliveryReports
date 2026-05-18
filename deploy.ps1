@@ -1,21 +1,31 @@
 # =============================================================================
-# Deploy GenerateDeliveryReports (Kestrel) to a Windows machine via Task Scheduler
+# Build & Package GenerateDeliveryReports
 # =============================================================================
 # Usage:
 #   .\deploy.ps1 -TargetPath "\\MACHINE\C$\Apps\GenerateDeliveryReports"
-#   .\deploy.ps1 -TargetPath "D:\Apps\GenerateDeliveryReports"  (local deploy)
-#   .\deploy.ps1 -TargetPath "D:\Apps\GenerateDeliveryReports" -TaskName "MyAppTask"
+#   .\deploy.ps1 -TargetPath "D:\Apps\GenerateDeliveryReports"  (local target)
 #
 # The script will:
-#   1. Publish the app self-contained
-#   2. Stop the existing Task Scheduler task and kill the process (if present)
-#   3. Copy published files to TargetPath
-#   4. Register (or update) a Task Scheduler task that runs the app at system startup
-#   5. Start the task immediately
+#   1. Clean previous build output
+#   2. Publish the app self-contained
+#   3. Copy the PPTX report template into the publish output
+#   4. Assemble CommonFiles (xlsx data files + PPTX template)
+#   5. Patch appsettings.json with target-machine paths
+#   6. Stage the GenerateSprintDashboard folder into the package
+#   7. Robocopy the entire package to TargetPath
+#
+# Output: a ready-to-copy package under .\package\
+#   package\
+#     Web\                     <- published .NET app (appsettings.json already patched)
+#     CommonFiles\
+#       Templates\             <- PPTX report template
+#       Files\                 <- xlsx data files mirrored from OneDrive
+#     GenerateSprintDashboard\ <- Python sprint dashboard script + template
+#
+# TargetPath is required so appsettings.json paths are baked in correctly
+# for the machine the package will be deployed to.
 #
 # The app binds to http://*:5158 (configured in Program.cs).
-# The task runs as SYSTEM. Ensure OneDriveLocation paths are accessible to SYSTEM,
-# or change -TaskName and configure a specific user account manually after deploy.
 # =============================================================================
 
 param(
@@ -23,14 +33,19 @@ param(
     [string]$TargetPath,
 
     [string]$Configuration = "Release",
-    [string]$Runtime       = "win-x64",
-    [string]$TaskName      = "GenerateDeliveryReports"
+    [string]$Runtime       = "win-x64"
 )
 
 $ErrorActionPreference = "Stop"
-$ProjectPath = Join-Path $PSScriptRoot "GenerateDeliveryReports\GenerateDeliveryReports.csproj"
-$PublishDir = Join-Path $PSScriptRoot "publish"
-$TemplateSrc = Join-Path $PSScriptRoot "GenerateDeliveryReports.Data\Templates"
+$ProjectPath         = Join-Path $PSScriptRoot "GenerateDeliveryReports\GenerateDeliveryReports.csproj"
+$SrcAppSettings      = Join-Path $PSScriptRoot "GenerateDeliveryReports\appsettings.json"
+$PublishDir          = Join-Path $PSScriptRoot "publish"
+$TemplateSrc         = Join-Path $PSScriptRoot "GenerateDeliveryReports.Data\Templates"
+$PackageDir          = Join-Path $PSScriptRoot "package"
+$PackageWeb          = Join-Path $PSScriptRoot "package\Web"
+$PackageCommon       = Join-Path $PSScriptRoot "package\CommonFiles"
+$SprintDashboardSrc  = Join-Path $PSScriptRoot "GenerateSprintDashboard"
+$PackageSprintDash   = Join-Path $PSScriptRoot "package\GenerateSprintDashboard"
 
 # Locate dotnet.exe
 $dotnetCmd = Get-Command dotnet -ErrorAction SilentlyContinue
@@ -51,17 +66,17 @@ if (-not $dotnetCmd) {
 $dotnet = if ($dotnetCmd -is [string]) { $dotnetCmd } else { $dotnetCmd.Source }
 Write-Host "Using dotnet: $dotnet" -ForegroundColor Gray
 
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host " GenerateDeliveryReports - Deploy Script" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host " GenerateDeliveryReports - Package Script" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
 
-# Step 1: Clean previous publish output
-if (Test-Path $PublishDir) {
-    Write-Host "`n[1/7] Cleaning previous publish output..." -ForegroundColor Yellow
-    Remove-Item -Recurse -Force $PublishDir
-}
-else {
-    Write-Host "`n[1/7] No previous publish output to clean." -ForegroundColor Gray
+# Step 1: Clean previous publish output and package staging
+Write-Host "`n[1/7] Cleaning previous build output..." -ForegroundColor Yellow
+foreach ($dir in @($PublishDir, $PackageDir)) {
+    if (Test-Path $dir) {
+        Remove-Item -Recurse -Force $dir
+        Write-Host "  Removed $dir" -ForegroundColor Gray
+    }
 }
 
 # Step 2: Publish self-contained
@@ -74,7 +89,7 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Publish succeeded." -ForegroundColor Green
 
 # Step 3: Copy PPTX template into publish output
-Write-Host "`n[3/7] Copying report template..." -ForegroundColor Yellow
+Write-Host "`n[3/7] Copying report template into publish output..." -ForegroundColor Yellow
 $TemplateDestDir = Join-Path $PublishDir "Templates"
 if (-not (Test-Path $TemplateDestDir)) {
     New-Item -ItemType Directory -Path $TemplateDestDir | Out-Null
@@ -82,104 +97,206 @@ if (-not (Test-Path $TemplateDestDir)) {
 Copy-Item -Path (Join-Path $TemplateSrc "*") -Destination $TemplateDestDir -Force
 Write-Host "Template copied to $TemplateDestDir" -ForegroundColor Green
 
-# Step 4: Update template path in appsettings.json to be relative
-Write-Host "`n[4/7] Updating appsettings.json for deployment..." -ForegroundColor Yellow
-$AppSettingsPath = Join-Path $PublishDir "appsettings.json"
+# Step 4: Assemble CommonFiles -- mirror xlsx files from OneDrive and copy PPTX template
+Write-Host "`n[4/7] Assembling CommonFiles..." -ForegroundColor Yellow
 
-# Use targeted string replacement instead of ConvertFrom-Json → ConvertTo-Json to avoid
+# Read OneDriveLocation from the source appsettings.json on this machine.
+# ConvertFrom-Json is safe here -- we are only reading, not writing back.
+$srcJson     = Get-Content $SrcAppSettings -Raw | ConvertFrom-Json
+$oneDriveSrc = $srcJson.AppSettings.OneDriveLocation
+if (-not $oneDriveSrc) {
+    Write-Host "ERROR: OneDriveLocation is not set in $SrcAppSettings" -ForegroundColor Red
+    exit 1
+}
+if (-not (Test-Path $oneDriveSrc)) {
+    Write-Host "ERROR: OneDriveLocation path not found: $oneDriveSrc" -ForegroundColor Red
+    exit 1
+}
+Write-Host "  Source OneDriveLocation: $oneDriveSrc" -ForegroundColor Gray
+
+# Copy only the specific xlsx files referenced in appsettings.json.
+# Uses robocopy per file via Start-Process to handle paths longer than 260 characters.
+function Copy-XlsxFile([string]$srcFile, [string]$dstFile) {
+    $srcDir  = [System.IO.Path]::GetDirectoryName($srcFile).TrimEnd('\')
+    $srcName = [System.IO.Path]::GetFileName($srcFile)
+    $dstDir  = [System.IO.Path]::GetDirectoryName($dstFile).TrimEnd('\')
+    if (-not [System.IO.Directory]::Exists($dstDir)) {
+        [System.IO.Directory]::CreateDirectory($dstDir) | Out-Null
+    }
+    $tmpLog = [System.IO.Path]::GetTempFileName()
+    $proc   = Start-Process "robocopy.exe" `
+        -ArgumentList "`"$srcDir`" `"$dstDir`" `"$srcName`" /R:2 /W:1 /IS" `
+        -Wait -PassThru -NoNewWindow -RedirectStandardOutput $tmpLog
+    Remove-Item $tmpLog -ErrorAction SilentlyContinue
+    return $proc.ExitCode
+}
+
+$filesDestDir  = Join-Path $PackageCommon "Files"
+New-Item -ItemType Directory -Path $filesDestDir -Force | Out-Null
+
+$oneDriveBase  = $oneDriveSrc.TrimEnd('\')
+$metricsFolder = "$($srcJson.AppSettings.MetricsFolder)".TrimStart('\').TrimStart('/')
+$dataFolder    = "$($srcJson.AppSettings.ReportAndDataFolder)".TrimStart('\').TrimStart('/')
+$csatFolder    = "$($srcJson.AppSettings.CSAT.CSATFolder)".TrimStart('\').TrimStart('/')
+
+Write-Host "  Staging folder  : $filesDestDir" -ForegroundColor Gray
+Write-Host "  OneDrive base   : $oneDriveBase" -ForegroundColor Gray
+Write-Host "  Metrics folder  : $metricsFolder" -ForegroundColor Gray
+Write-Host "  Data folder     : $dataFolder" -ForegroundColor Gray
+Write-Host "  CSAT folder     : $csatFolder" -ForegroundColor Gray
+
+$xlsxCount  = 0
+$xlsxFailed = 0
+
+# Projects: MetricsSheetPath (array per project) and DataFileName
+Write-Host "  Copying project metrics and data files..." -ForegroundColor Gray
+foreach ($project in $srcJson.AppSettings.Projects) {
+    foreach ($metricsPath in $project.MetricsSheetPath) {
+        if (-not $metricsPath) { continue }
+        $rel     = Join-Path $metricsFolder $metricsPath
+        $srcFull = Join-Path $oneDriveBase $rel
+        $code    = Copy-XlsxFile $srcFull (Join-Path $filesDestDir $rel)
+        if     ($code -eq 0)  { Write-Host "    INFO: File not found -- verify or remove entry:`n          $srcFull" -ForegroundColor Cyan }
+        elseif ($code -lt 8)  { $xlsxCount++; Write-Host "    OK: $srcFull" -ForegroundColor DarkGray }
+        else                  { $xlsxFailed++; Write-Host "    WARNING: Could not copy $srcFull" -ForegroundColor Yellow }
+    }
+    if (-not $project.DataFileName) { continue }
+    $rel     = Join-Path $dataFolder $project.DataFileName
+    $srcFull = Join-Path $oneDriveBase $rel
+    $code    = Copy-XlsxFile $srcFull (Join-Path $filesDestDir $rel)
+    if     ($code -eq 0)  { Write-Host "    INFO: File not found -- verify or remove entry:`n          $srcFull" -ForegroundColor Cyan }
+    elseif ($code -lt 8)  { $xlsxCount++; Write-Host "    OK: $srcFull" -ForegroundColor DarkGray }
+    else                  { $xlsxFailed++; Write-Host "    WARNING: Could not copy $srcFull" -ForegroundColor Yellow }
+}
+
+# CSAT: ClientSurveyFilePath -- deduplicated as multiple clients share the same survey file
+$csatClientCount = @($srcJson.AppSettings.CSAT.Clients).Count
+Write-Host "  Copying CSAT survey files (folder: $csatFolder | $csatClientCount client entries)..." -ForegroundColor Gray
+$csatSeen = @{}
+foreach ($client in $srcJson.AppSettings.CSAT.Clients) {
+    $fileName = "$($client.ClientSurveyFilePath)".Trim()
+    if (-not $fileName -or $csatSeen.ContainsKey($fileName)) { continue }
+    $csatSeen[$fileName] = $true
+    $rel     = Join-Path $csatFolder $fileName
+    $srcFull = Join-Path $oneDriveBase $rel
+    $code    = Copy-XlsxFile $srcFull (Join-Path $filesDestDir $rel)
+    if     ($code -eq 0)  { Write-Host "    INFO: File not found -- verify or remove entry:`n          $srcFull" -ForegroundColor Cyan }
+    elseif ($code -lt 8)  { $xlsxCount++; Write-Host "    OK: $srcFull" -ForegroundColor DarkGray }
+    else                  { $xlsxFailed++; Write-Host "    WARNING: Could not copy $srcFull" -ForegroundColor Yellow }
+}
+
+$skippedMsg = if ($xlsxFailed -gt 0) { " ($xlsxFailed could not be copied)" } else { "" }
+Write-Host "  Staged $xlsxCount xlsx file(s) to CommonFiles\Files\$skippedMsg" -ForegroundColor Green
+
+# Verify what actually landed in the staging folder
+$stagedFiles = Get-ChildItem -Path $filesDestDir -Recurse -File -ErrorAction SilentlyContinue
+if ($stagedFiles.Count -gt 0) {
+    Write-Host "  Verified $($stagedFiles.Count) file(s) in staging folder:" -ForegroundColor Green
+    $stagedFiles | ForEach-Object { Write-Host "    $($_.FullName)" -ForegroundColor DarkGray }
+} else {
+    Write-Host "  WARNING: Staging folder is empty -- all source paths above showed as INFO (not found)." -ForegroundColor Yellow
+    Write-Host "           Check that OneDriveLocation and folder paths in appsettings.json are correct." -ForegroundColor Yellow
+}
+
+# Copy PPTX template to CommonFiles\Templates\
+$commonTemplateDir = Join-Path $PackageCommon "Templates"
+New-Item -ItemType Directory -Path $commonTemplateDir -Force | Out-Null
+Copy-Item -Path (Join-Path $TemplateSrc "*") -Destination $commonTemplateDir -Force
+Write-Host "  PPTX template copied to CommonFiles\Templates\" -ForegroundColor Green
+
+# Step 5: Patch appsettings.json with target-machine paths and move it into package\Web\
+Write-Host "`n[5/7] Patching appsettings.json with target paths..." -ForegroundColor Yellow
+
+# Use targeted string replacement (not ConvertFrom-Json → ConvertTo-Json) to avoid
 # PowerShell 5.1 silently dropping deeply-nested structures (e.g. the CSAT Clients array).
+$AppSettingsPath = Join-Path $PublishDir "appsettings.json"
 $content = Get-Content $AppSettingsPath -Raw
-$newTemplatePath = 'Templates\\GlobalPayments-DeliveryQualitySummaryReport_Template.pptx'
-$content = $content -replace '(?<="SprintMetricsReportTemplatePath"\s*:\s*")[^"]*(?=")', $newTemplatePath
+
+$targetOneDrive        = (Join-Path $TargetPath "CommonFiles\Files")   -replace '\\', '\\'
+$targetCommon          = (Join-Path $TargetPath "CommonFiles")           -replace '\\', '\\'
+$targetTemplate        = (Join-Path $TargetPath "CommonFiles\Templates\GlobalPayments-DeliveryQualitySummaryReport_Template.pptx") -replace '\\', '\\'
+$targetDashboardHtml   = (Join-Path $TargetPath "GenerateSprintDashboard\sprint_dashboard.html") -replace '\\', '\\'
+$targetDashboardScript = (Join-Path $TargetPath "GenerateSprintDashboard\sprint_dashboard.py")   -replace '\\', '\\'
+
+$content = $content -replace '(?<="OneDriveLocation"\s*:\s*")[^"]*(?=")',                $targetOneDrive
+$content = $content -replace '(?<="CommonFolderPath"\s*:\s*")[^"]*(?=")',                $targetCommon
+$content = $content -replace '(?<="SprintMetricsReportTemplatePath"\s*:\s*")[^"]*(?=")', $targetTemplate
 # Clear the hardcoded dev-machine path so the app uses its built-in fallback (wwwroot/worker-summary.html)
-$content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")', ''
-# Blank the dev-machine CommonFolderPath — must be set on the target machine
-$content = $content -replace '(?<="CommonFolderPath"\s*:\s*")[^"]*(?=")', ''
+$content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")',           ''
+$content = $content -replace '(?<="SprintDashboardHtmlPath"\s*:\s*")[^"]*(?=")',         $targetDashboardHtml
+$content = $content -replace '(?<="SprintDashboardScriptPath"\s*:\s*")[^"]*(?=")',       $targetDashboardScript
+
 [System.IO.File]::WriteAllText($AppSettingsPath, $content, [System.Text.Encoding]::UTF8)
 
-# Verify CSAT section survived
+# Verify CSAT section survived the regex replacements
 if ($content -notmatch '"CSAT"') {
-    Write-Host "ERROR: CSAT section is missing from appsettings.json after update. Aborting deploy." -ForegroundColor Red
+    Write-Host "ERROR: CSAT section is missing from appsettings.json after patching. Aborting." -ForegroundColor Red
     exit 1
 }
 if ($content -notmatch '"Clients"') {
-    Write-Host "ERROR: CSAT Clients array is missing from appsettings.json after update. Aborting deploy." -ForegroundColor Red
+    Write-Host "ERROR: CSAT Clients array is missing from appsettings.json after patching. Aborting." -ForegroundColor Red
     exit 1
 }
-Write-Host "appsettings.json updated." -ForegroundColor Green
-Write-Host "  NOTE: Update 'OneDriveLocation' and 'CommonFolderPath' in appsettings.json on the target machine." -ForegroundColor Magenta
+Write-Host "appsettings.json patched." -ForegroundColor Green
 
-# Resolve exe path once — used in both Step 5 (process kill) and Step 7 (task registration)
-$ExePath     = Join-Path $TargetPath "GenerateDeliveryReports.exe"
-$ProcessName = [System.IO.Path]::GetFileNameWithoutExtension($ExePath)
+# Move published output into package\Web\
+New-Item -ItemType Directory -Path $PackageWeb -Force | Out-Null
+Copy-Item -Path (Join-Path $PublishDir "*") -Destination $PackageWeb -Recurse -Force
+Write-Host "Published app staged to package\Web\" -ForegroundColor Green
 
-# Step 5: Stop Task Scheduler task + kill the process to release file locks
-Write-Host "`n[5/7] Stopping task '$TaskName' (if running)..." -ForegroundColor Yellow
-$existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-if ($existingTask) {
-    Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-    # Kill the host process directly so all file handles are released before the copy
-    Get-Process -Name $ProcessName -ErrorAction SilentlyContinue |
-        Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Seconds 3
-    Write-Host "Task stopped." -ForegroundColor Green
+# Step 6: Stage GenerateSprintDashboard folder into the package
+Write-Host "`n[6/7] Staging GenerateSprintDashboard..." -ForegroundColor Yellow
+if (Test-Path $SprintDashboardSrc) {
+    New-Item -ItemType Directory -Path $PackageSprintDash -Force | Out-Null
+    Copy-Item -Path (Join-Path $SprintDashboardSrc "*") -Destination $PackageSprintDash -Recurse -Force
+    Write-Host "GenerateSprintDashboard staged to package\GenerateSprintDashboard\" -ForegroundColor Green
 } else {
-    Write-Host "Task not found -- will register after copy." -ForegroundColor Gray
+    Write-Host "WARNING: GenerateSprintDashboard source not found at $SprintDashboardSrc -- skipping." -ForegroundColor Yellow
 }
 
-# Step 6: Copy to target
-Write-Host "`n[6/7] Deploying to $TargetPath ..." -ForegroundColor Yellow
+# Step 7: Copy package to target
+Write-Host "`n[7/7] Deploying package to $TargetPath ..." -ForegroundColor Yellow
 if (-not (Test-Path $TargetPath)) {
     New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
 }
-Copy-Item -Path (Join-Path $PublishDir "*") -Destination $TargetPath -Recurse -Force
-Write-Host "Deployed successfully to $TargetPath" -ForegroundColor Green
-
-# Step 7: Register (or update) the Task Scheduler task, then start it
-Write-Host "`n[7/7] Configuring Task Scheduler task '$TaskName'..." -ForegroundColor Yellow
-$action    = New-ScheduledTaskAction -Execute $ExePath -WorkingDirectory $TargetPath
-$trigger   = New-ScheduledTaskTrigger -AtStartup
-$settings  = New-ScheduledTaskSettingsSet `
-                 -ExecutionTimeLimit (New-TimeSpan -Hours 0) `
-                 -RestartCount 3 `
-                 -RestartInterval (New-TimeSpan -Minutes 1) `
-                 -MultipleInstances IgnoreNew
-$principal = New-ScheduledTaskPrincipal `
-                 -UserId "SYSTEM" `
-                 -LogonType ServiceAccount `
-                 -RunLevel Highest
-
-$task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-if ($task) {
-    Set-ScheduledTask -TaskName $TaskName `
-        -Action $action -Trigger $trigger -Settings $settings -Principal $principal | Out-Null
-    Write-Host "Task updated." -ForegroundColor Green
-} else {
-    Register-ScheduledTask -TaskName $TaskName `
-        -Description "GenerateDeliveryReports Kestrel web application" `
-        -Action $action -Trigger $trigger -Settings $settings -Principal $principal | Out-Null
-    Write-Host "Task registered." -ForegroundColor Green
+$proc = Start-Process "robocopy.exe" `
+    -ArgumentList "`"$($PackageDir.TrimEnd('\'))`" `"$($TargetPath.TrimEnd('\'))`" /E /R:2 /W:1" `
+    -Wait -PassThru -NoNewWindow
+if ($proc.ExitCode -ge 8) {
+    Write-Host "ERROR: Deploy failed (robocopy exit $($proc.ExitCode))." -ForegroundColor Red
+    exit 1
 }
-
-Start-ScheduledTask -TaskName $TaskName
-Write-Host "Task started. App should be reachable at http://<machine>:5158" -ForegroundColor Green
+Write-Host "Package deployed to $TargetPath" -ForegroundColor Green
 
 # Summary
-Write-Host "`n========================================" -ForegroundColor Cyan
-Write-Host " Deployment Complete!" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "`n==========================================" -ForegroundColor Cyan
+Write-Host " Deploy Complete!" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Post-deployment checklist on the target machine:" -ForegroundColor Yellow
-Write-Host "  1. Edit $TargetPath\appsettings.json:" -ForegroundColor White
-Write-Host "     - Set 'OneDriveLocation' to the local OneDrive sync path" -ForegroundColor White
-Write-Host "     - Set 'CommonFolderPath' to a writable folder (e.g. D:\AppData\GenerateDeliveryReports)" -ForegroundColor White
-Write-Host "       This folder will hold LogFiles\ and downloads\ sub-folders" -ForegroundColor White
-Write-Host "  2. Verify the task is running:" -ForegroundColor White
-Write-Host "     Get-ScheduledTask -TaskName '$TaskName'" -ForegroundColor Gray
-Write-Host "  3. Check the app is reachable:" -ForegroundColor White
-Write-Host "     Invoke-WebRequest http://localhost:5158 -UseBasicParsing" -ForegroundColor Gray
-Write-Host "  4. View application logs:" -ForegroundColor White
-Write-Host ('     Get-Content "' + $TargetPath + '\LogFiles\log*.txt" -Tail 50') -ForegroundColor Gray
-Write-Host "  5. To stop the app manually:" -ForegroundColor White
-Write-Host "     Stop-ScheduledTask -TaskName '$TaskName'" -ForegroundColor Gray
+Write-Host "Package location: $PackageDir" -ForegroundColor Yellow
+Write-Host ""
+Write-Host "Package layout:" -ForegroundColor Yellow
+Write-Host "  package\" -ForegroundColor White
+Write-Host "    Web\                          <- web application (appsettings.json pre-patched)" -ForegroundColor White
+Write-Host "    CommonFiles\" -ForegroundColor White
+Write-Host "      Templates\                  <- PPTX report template" -ForegroundColor White
+Write-Host "      Files\                      <- xlsx data files ($xlsxCount file(s) from OneDrive)" -ForegroundColor White
+Write-Host "    GenerateSprintDashboard\      <- sprint dashboard script + template" -ForegroundColor White
+Write-Host ""
+Write-Host "Paths baked into appsettings.json target: $TargetPath" -ForegroundColor Gray
+Write-Host ""
+
+# Show actual file counts per package subfolder
+Write-Host "Package contents:" -ForegroundColor Yellow
+$subFolders = @("Web", "CommonFiles\Files", "CommonFiles\Templates", "GenerateSprintDashboard")
+foreach ($sub in $subFolders) {
+    $subPath = Join-Path $PackageDir $sub
+    if (Test-Path $subPath) {
+        $count = (Get-ChildItem -Path $subPath -Recurse -File -ErrorAction SilentlyContinue).Count
+        Write-Host ("  {0,-40} {1} file(s)" -f "$sub\", $count) -ForegroundColor White
+    } else {
+        Write-Host "  $sub\  <missing>" -ForegroundColor Yellow
+    }
+}
+Write-Host ""
 Write-Host ""

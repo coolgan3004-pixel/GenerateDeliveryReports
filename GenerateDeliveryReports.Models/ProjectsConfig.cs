@@ -37,6 +37,8 @@ public class AppSettings
     public string MetricsFolder { get; set; } = string.Empty;
     public string SprintMetricsReportTemplatePath { get; set; }= string.Empty;
     public string WorkerSummaryFilePath { get; set; } = string.Empty;
+    public string SprintDashboardHtmlPath { get; set; } = string.Empty;
+    public string SprintDashboardScriptPath { get; set; } = string.Empty;
     public List<Project> Projects { get; set; } = [];
     public CsatConfig CSAT { get; set; } = new();
     public EmailSetting EmailSettings { get; set; } = new();

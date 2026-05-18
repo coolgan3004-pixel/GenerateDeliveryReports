@@ -1,0 +1,96 @@
+@page "/sprint-dashboard"
+@using GenerateDeliveryReports.Data.Services
+@inject SprintDashboardService DashboardService
+@inject ILogger<SprintDashboard> Logger
+@rendermode InteractiveServer
+
+<PageTitle>Sprint Dashboard</PageTitle>
+
+<div class="d-flex align-items-center justify-content-between mb-2">
+    <h3>Sprint Dashboard</h3>
+    @if (DashboardService.IsScriptConfigured)
+    {
+        <button class="btn btn-primary btn-sm" @onclick="RunScript" disabled="@_running">
+            @if (_running)
+            {
+                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                <span>Generating...</span>
+            }
+            else
+            {
+                <span>Run Now</span>
+            }
+        </button>
+    }
+</div>
+
+@if (_message is not null)
+{
+    <div class="alert @(_error ? "alert-danger" : "alert-success") py-2 px-3 mb-2" style="font-size:0.85rem">
+        @_message
+    </div>
+}
+
+@if (_lastUpdated.HasValue)
+{
+    <p class="text-muted" style="font-size:0.85rem">Last updated: @_lastUpdated.Value.ToString("yyyy-MM-dd HH:mm:ss")</p>
+}
+
+@if (!_fileExists)
+{
+    <p class="text-muted">
+        No dashboard available yet.
+        @if (DashboardService.IsScriptConfigured)
+        {
+            <span> Click <strong>Run Now</strong> to generate one.</span>
+        }
+        else
+        {
+            <span> Configure <code>SprintDashboardHtmlPath</code> in appsettings.json.</span>
+        }
+    </p>
+}
+else
+{
+    <iframe src="/api/sprint-dashboard?t=@_cacheBust"
+            style="width:100%; border:none; height:calc(100vh - 160px);"
+            title="Sprint Dashboard"></iframe>
+}
+
+@code {
+    private bool _fileExists;
+    private bool _running;
+    private DateTime? _lastUpdated;
+    private long _cacheBust;
+    private string? _message;
+    private bool _error;
+
+    protected override Task OnInitializedAsync()
+    {
+        Refresh();
+        return Task.CompletedTask;
+    }
+
+    private void Refresh()
+    {
+        var (exists, lastUpdated) = DashboardService.GetDashboardInfo();
+        _fileExists = exists;
+        _lastUpdated = lastUpdated;
+        _cacheBust = lastUpdated?.Ticks ?? 0;
+    }
+
+    private async Task RunScript()
+    {
+        _running = true;
+        _message = null;
+        StateHasChanged();
+
+        var (success, output) = await DashboardService.RunScriptAsync();
+
+        _running = false;
+        _error = !success;
+        _message = success ? "Dashboard generated successfully." : output;
+        Refresh();
+        StateHasChanged();
+    }
+}

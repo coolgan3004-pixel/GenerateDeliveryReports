@@ -3,6 +3,7 @@ using GenerateDeliveryReports.Data.Concrete;
 using GenerateDeliveryReports.Data.Interface;
 using GenerateDeliveryReports.Data.Services;
 using GenerateDeliveryReports.Models;
+using System.Diagnostics;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Serilog;
@@ -10,9 +11,10 @@ using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Kestrel: HTTP only on a fixed port — but only when running standalone (not under IIS).
-// Under IIS in-process hosting, UseUrls overrides the IIS-assigned binding and breaks the app.
-if (!builder.Environment.IsProduction() || string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APP_POOL_ID")))
+// Kestrel: HTTP only on a fixed port — only for the deployed (Production) instance running
+// standalone via Task Scheduler. Dev runs use launchSettings.json to avoid port conflicts.
+// Under IIS in-process hosting, UseUrls is skipped entirely (APP_POOL_ID is set by IIS).
+if (builder.Environment.IsProduction() && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APP_POOL_ID")))
 {
     builder.WebHost.UseUrls("http://*:5158");
 }
@@ -36,6 +38,7 @@ builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSet
 builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
 builder.Services.AddScoped<SprintReportService>();
 builder.Services.AddScoped<CsatService>();
+builder.Services.AddScoped<SprintDashboardService>();
 
 var app = builder.Build();
 
@@ -72,6 +75,16 @@ app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options) =>
         path = Path.Combine(AppContext.BaseDirectory, "wwwroot", "worker-summary.html");
 
     if (!File.Exists(path))
+        return Results.NotFound();
+
+    var html = await File.ReadAllTextAsync(path);
+    return Results.Content(html, "text/html");
+});
+
+app.MapGet("/api/sprint-dashboard", async (IOptions<AppSettings> options) =>
+{
+    var path = options.Value.SprintDashboardHtmlPath;
+    if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         return Results.NotFound();
 
     var html = await File.ReadAllTextAsync(path);
