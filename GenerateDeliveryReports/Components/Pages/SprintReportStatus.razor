@@ -1,0 +1,191 @@
+@page "/sprint-report-status"
+@rendermode InteractiveServer
+@using GenerateDeliveryReports.Models
+@using GenerateDeliveryReports.Data.Services
+@inject SprintReportStatusService StatusService
+@inject ILogger<SprintReportStatus> Logger
+
+<PageTitle>Sprint Report Status</PageTitle>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="mb-0">Sprint Report Status</h1>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="Reload">
+        <span class="bi bi-arrow-clockwise"></span> Refresh
+    </button>
+</div>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else if (_report is null)
+{
+    <div class="alert alert-info">
+        No status file found. Run <code>generate-sprint-status.ps1</code> to generate one,
+        then configure <code>SprintReportStatusJsonPath</code> in <code>appsettings.json</code>
+        (or place the file at <code>@StatusService.ResolveJsonPath()</code>).
+    </div>
+}
+else
+{
+    @* ── meta bar ── *@
+    <p class="text-muted mb-3" style="font-size:0.85rem">
+        Generated: @_report.Generated
+        &nbsp;|&nbsp; From: @_report.FromDate
+        &nbsp;|&nbsp; File last modified: @(_lastModified?.ToString("yyyy-MM-dd HH:mm") ?? "—")
+    </p>
+
+    @* ── summary chips ── *@
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <span class="badge bg-success fs-6">@_countAvailable Available</span>
+        <span class="badge @(_countMissing > 0 ? "bg-warning text-dark" : "bg-secondary") fs-6">@_countMissing Missing</span>
+        <span class="badge bg-secondary fs-6">@_countUpcoming Upcoming</span>
+        @if (_parseErrors.Count > 0)
+        {
+            <span class="badge bg-danger fs-6">@_parseErrors.Count Parse Errors</span>
+        }
+    </div>
+
+    @* ── main table grouped by month ── *@
+    @foreach (var monthGroup in _byMonth)
+    {
+        <h5 class="mt-4 mb-2 border-bottom pb-1">@monthGroup.Key</h5>
+        <div class="table-responsive mb-2">
+            <table class="table table-sm table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Application</th>
+                        <th>Sprint</th>
+                        <th>Sprint End</th>
+                        <th>Status</th>
+                        <th>Report Date</th>
+                        <th title="Days from sprint end to report creation">Days to Report</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in monthGroup.Value)
+                    {
+                        <tr>
+                            <td>@e.Application</td>
+                            <td>@e.SprintName</td>
+                            <td>@FormatDate(e.SprintEndDate)</td>
+                            <td>@StatusBadge(e.ReportStatus)</td>
+                            <td>@FormatDate(e.ReportCreatedDate)</td>
+                            <td class="@DaysDiffClass(e.DaysDiff)">
+                                @(e.DaysDiff.HasValue ? e.DaysDiff.Value.ToString() : "—")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @* ── parse errors section ── *@
+    @if (_parseErrors.Count > 0)
+    {
+        <h5 class="mt-4 mb-2 border-bottom pb-1 text-danger">Parse Errors (@_parseErrors.Count)</h5>
+        <p class="text-muted small">
+            These sprint names could not be parsed. Check the sprint name format in the Data sheet of each project's Excel workbook.
+        </p>
+        <div class="table-responsive">
+            <table class="table table-sm table-danger align-middle">
+                <thead>
+                    <tr>
+                        <th>Application</th>
+                        <th>Sprint Name (raw)</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in _parseErrors)
+                    {
+                        <tr>
+                            <td>@e.Application</td>
+                            <td><code>@e.SprintName</code></td>
+                            <td class="text-danger small">@e.ParseError</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private SprintStatusReport? _report;
+    private DateTime? _lastModified;
+    private string? _error;
+
+    private List<SprintStatusEntry> _parseErrors = [];
+    private Dictionary<string, List<SprintStatusEntry>> _byMonth = new();
+    private int _countAvailable;
+    private int _countMissing;
+    private int _countUpcoming;
+
+    protected override void OnInitialized() => Reload();
+
+    private void Reload()
+    {
+        try
+        {
+            var (report, lastModified, error) = StatusService.Load();
+            _error        = error;
+            _report       = report;
+            _lastModified = lastModified;
+
+            _byMonth       = new();
+            _parseErrors   = [];
+            _countAvailable = _countMissing = _countUpcoming = 0;
+
+            if (report is null) return;
+
+            foreach (var e in report.Entries)
+            {
+                if (e.ReportStatus == "ParseError")
+                {
+                    _parseErrors.Add(e);
+                    continue;
+                }
+
+                var key = e.Month ?? "Unknown";
+                if (!_byMonth.ContainsKey(key)) _byMonth[key] = [];
+                _byMonth[key].Add(e);
+
+                switch (e.ReportStatus)
+                {
+                    case "Available": _countAvailable++; break;
+                    case "Missing":   _countMissing++;   break;
+                    case "Upcoming":  _countUpcoming++;  break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load sprint report status.");
+            _error = $"Unexpected error: {ex.Message}";
+        }
+    }
+
+    private static string FormatDate(string? iso)
+    {
+        if (string.IsNullOrWhiteSpace(iso)) return "—";
+        return DateTime.TryParse(iso, out var d) ? d.ToString("dd-MMM-yyyy") : iso;
+    }
+
+    private static RenderFragment StatusBadge(string? status) => status switch
+    {
+        "Available" => @<span class="badge bg-success">Available</span>,
+        "Missing"   => @<span class="badge bg-warning text-dark">Missing</span>,
+        "Upcoming"  => @<span class="badge bg-secondary">Upcoming</span>,
+        _           => @<span class="badge bg-light text-dark">@status</span>
+    };
+
+    private static string DaysDiffClass(int? days) => days switch
+    {
+        null        => "",
+        <= 3        => "text-success fw-semibold",
+        <= 7        => "text-warning fw-semibold",
+        _           => "text-danger fw-semibold"
+    };
+}

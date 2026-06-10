@@ -294,10 +294,12 @@
         sendResult = string.Empty;
         StateHasChanged();
 
-        // Placeholder — wire up to email service when ready
-        await Task.Delay(500);
-        sendSuccess = false;
-        sendResult = "Email sending is not yet configured. Please set up the EmailSettings in appsettings.json.";
+        var attachmentPaths = attachedSheets
+            .Where(s => generatedPdfs.ContainsKey(s))
+            .Select(s => generatedPdfs[s]);
+
+        (sendSuccess, sendResult) = await Task.Run(() =>
+            CsatService.SendEmail(emailFrom, emailTo, emailSubject, emailBody, attachmentPaths));
 
         isSending = false;
         StateHasChanged();

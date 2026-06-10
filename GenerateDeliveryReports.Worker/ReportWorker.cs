@@ -8,14 +8,20 @@ namespace GenerateDeliveryReports.Worker;
 public class ReportWorker
 {
     private readonly IDataProcessor _dataProcessor;
+    private readonly IEmailService _emailService;
     private readonly AppSettings _appSettings;
     private readonly ILogger<ReportWorker> _logger;
 
-    public ReportWorker(IDataProcessor dataProcessor, IOptions<AppSettings> appSettings, ILogger<ReportWorker> logger)
+    public ReportWorker(
+        IDataProcessor dataProcessor,
+        IEmailService emailService,
+        IOptions<AppSettings> appSettings,
+        ILogger<ReportWorker> logger)
     {
         _dataProcessor = dataProcessor;
-        _appSettings = appSettings.Value;
-        _logger = logger;
+        _emailService  = emailService;
+        _appSettings   = appSettings.Value;
+        _logger        = logger;
     }
 
     public async Task RunOnceAsync(CancellationToken cancellationToken)
@@ -235,29 +241,19 @@ public class ReportWorker
             return Task.CompletedTask;
         }
 
-        try
+        var (success, message) = _emailService.Send(new EmailParameters
         {
-            var outlookType = Type.GetTypeFromProgID("Outlook.Application")
-                ?? throw new InvalidOperationException("Outlook is not installed or not registered on this machine.");
+            FromEmailAddress = email.FromEmailAddress,
+            ToEmailAddress   = string.Join(";", email.Users.Select(u => u.Email)),
+            Subject          = $"Delivery Report Cycle Summary - {cycleTime:yyyy-MM-dd HH:mm}",
+            Body             = html,
+            IsHtmlBody       = true
+        });
 
-            dynamic outlook = Activator.CreateInstance(outlookType)!;
-            dynamic mail = outlook.CreateItem(0); // 0 = olMailItem
-
-            mail.Subject = $"Delivery Report Cycle Summary - {cycleTime:yyyy-MM-dd HH:mm}";
-            mail.HTMLBody = html;
-
-            foreach (var u in email.Users)
-                mail.Recipients.Add(u.Email);
-
-            mail.Recipients.ResolveAll();
-            mail.Send();
-
-            _logger.LogInformation("Cycle summary email sent via Outlook to {Count} recipient(s).", email.Users.Count);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send email via Outlook COM.");
-        }
+        if (success)
+            _logger.LogInformation("Cycle summary email sent to {Count} recipient(s).", email.Users.Count);
+        else
+            _logger.LogError("Failed to send cycle summary email: {Message}", message);
 
         return Task.CompletedTask;
     }

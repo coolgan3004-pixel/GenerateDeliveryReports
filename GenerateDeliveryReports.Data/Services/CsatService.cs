@@ -1,4 +1,5 @@
 using GenerateDeliveryReports.Data.Concrete;
+using GenerateDeliveryReports.Data.Interface;
 using GenerateDeliveryReports.Models;
 using Microsoft.Extensions.Options;
 using OfficeOpenXml;
@@ -8,10 +9,12 @@ namespace GenerateDeliveryReports.Data.Services;
 public class CsatService
 {
     private readonly AppSettings _settings;
+    private readonly IEmailService _emailService;
 
-    public CsatService(IOptions<AppSettings> options)
+    public CsatService(IOptions<AppSettings> options, IEmailService emailService)
     {
-        _settings = options.Value;
+        _settings     = options.Value;
+        _emailService = emailService;
     }
 
     public IEnumerable<string> GetClientNames() =>
@@ -39,6 +42,30 @@ public class CsatService
 
         var folder = Path.Combine(_settings.OneDriveLocation, _settings.CSAT.CSATFolder.TrimStart('\\'));
         return Path.GetFullPath(Path.Combine(folder, client.ClientSurveyFilePath));
+    }
+
+    /// <summary>
+    /// Sends a CSAT email via <see cref="IEmailService"/>, resolving the web-accessible
+    /// PDF paths (e.g. /downloads/Sheet.pdf) to their physical locations before sending.
+    /// </summary>
+    public (bool success, string message) SendEmail(
+        string from, string to, string subject, string body,
+        IEnumerable<string> attachmentWebPaths)
+    {
+        // Convert /downloads/filename.pdf -> TempPath\filename.pdf
+        var physicalAttachments = attachmentWebPaths
+            .Select(webPath => Path.Combine(_settings.TempPath, Path.GetFileName(webPath)))
+            .ToList();
+
+        return _emailService.Send(new EmailParameters
+        {
+            FromEmailAddress = from,
+            ToEmailAddress   = to,
+            Subject          = subject,
+            Body             = body,
+            IsHtmlBody       = false,
+            Attachments      = physicalAttachments
+        });
     }
 
     /// <summary>
