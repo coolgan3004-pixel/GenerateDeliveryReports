@@ -42,7 +42,9 @@ public class SprintDashboardService
             UseShellExecute = false,
             CreateNoWindow = true
         };
-
+        psi.Environment["SPRINT_BRIEF_ROOT"] = Path.Combine(
+            _settings.OneDriveLocation, _settings.MetricsFolder);
+        psi.Environment["SPRINT_BRIEF_OUT"] = _settings.SprintDashboardHtmlPath;
         try
         {
             using var proc = Process.Start(psi)!;

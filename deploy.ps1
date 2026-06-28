@@ -216,7 +216,7 @@ $targetOneDrive        = (Join-Path $TargetPath "CommonFiles\Files")   -replace 
 $targetCommon          = (Join-Path $TargetPath "CommonFiles")           -replace '\\', '\\'
 $targetTemplate        = (Join-Path $TargetPath "CommonFiles\Templates\GlobalPayments-DeliveryQualitySummaryReport_Template.pptx") -replace '\\', '\\'
 $targetDashboardHtml   = (Join-Path $TargetPath "GenerateSprintDashboard\sprint_dashboard.html") -replace '\\', '\\'
-$targetDashboardScript = (Join-Path $TargetPath "GenerateSprintDashboard\sprint_dashboard.py")   -replace '\\', '\\'
+$targetDashboardScript = (Join-Path $TargetPath "GenerateSprintDashboard\daily_brief.py")   -replace '\\', '\\'
 
 $content = $content -replace '(?<="OneDriveLocation"\s*:\s*")[^"]*(?=")',                $targetOneDrive
 $content = $content -replace '(?<="CommonFolderPath"\s*:\s*")[^"]*(?=")',                $targetCommon

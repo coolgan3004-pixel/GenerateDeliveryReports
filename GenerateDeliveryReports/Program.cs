@@ -41,6 +41,7 @@ builder.Services.AddScoped<SprintReportService>();
 builder.Services.AddScoped<CsatService>();
 builder.Services.AddScoped<SprintDashboardService>();
 builder.Services.AddScoped<SprintReportStatusService>();
+builder.Services.AddSingleton<MeetingMinutesService>();
 
 var app = builder.Build();
 

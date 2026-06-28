@@ -84,6 +84,7 @@ All paths and project metadata are stored in `appsettings.json` under an `AppSet
     "DownloadsFolder": "C:\\...\\Downloads",
     "OneDriveLocation": "",
     "ReportAndDataFolder": "",
+    "SprintReportsAvailabilityJSONFileName":"",
     "MetricsFolder": "",
     "SprintMetricsReportTemplatePath": "Templates\\GlobalPayments-DeliveryQualitySummaryReport_Template.pptx",
     "PMOEmailContent": "Hi Team,\n\nPlease find the report ## at #Link#.\n\nRegards",

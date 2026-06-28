@@ -3,6 +3,8 @@
 @using GenerateDeliveryReports.Models
 @using GenerateDeliveryReports.Data.Services
 @inject CsatService CsatService
+@inject MeetingMinutesService MinutesService
+@inject IJSRuntime JS
 
 <PageTitle>CSAT Report</PageTitle>
 
@@ -184,6 +186,99 @@
     }
 </div>
 
+@* ─── Meeting Minutes Panel ─── *@
+<hr class="my-4" />
+<div class="container-fluid">
+    <h4 class="mb-3">Meeting Minutes</h4>
+
+    @* Model download status *@
+    @if (!minutesModelReady)
+    {
+        <div class="alert alert-info py-2 small d-flex align-items-center gap-2">
+            <span class="spinner-border spinner-border-sm"></span>
+            <span>Preparing Whisper model… (first run downloads ~145 MB)</span>
+        </div>
+    }
+
+    <div class="card mb-3">
+        <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+            <span>Record Meeting Audio</span>
+            @if (isRecording)
+            {
+                <span class="badge bg-danger">● REC @recordingDuration</span>
+            }
+        </div>
+        <div class="card-body">
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-danger"
+                        disabled="@(isRecording || isTranscribing || !minutesModelReady)"
+                        @onclick="StartRecording">
+                    ● Start Recording
+                </button>
+                <button class="btn btn-secondary"
+                        disabled="@(!isRecording)"
+                        @onclick="StopAndTranscribe">
+                    ■ Stop &amp; Transcribe
+                </button>
+                <button class="btn btn-outline-secondary"
+                        disabled="@(string.IsNullOrEmpty(transcript) || isGeneratingMinutes)"
+                        @onclick="GenerateMinutes">
+                    ✦ Generate Minutes
+                </button>
+                <button class="btn btn-outline-danger btn-sm ms-auto"
+                        disabled="@(isRecording || isTranscribing || isGeneratingMinutes)"
+                        @onclick="ClearMinutes">
+                    Clear
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(minutesError))
+            {
+                <div class="alert alert-danger mt-3 py-2 small">@minutesError</div>
+            }
+
+            @if (isTranscribing)
+            {
+                <div class="d-flex align-items-center gap-2 mt-3 text-muted small">
+                    <span class="spinner-border spinner-border-sm"></span>
+                    Transcribing audio…
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(transcript))
+            {
+                <div class="mt-3">
+                    <label class="form-label small fw-semibold">Transcript</label>
+                    <textarea class="form-control form-control-sm font-monospace"
+                              rows="6"
+                              @bind="transcript"></textarea>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (isGeneratingMinutes)
+    {
+        <div class="d-flex align-items-center gap-2 text-muted small mb-3">
+            <span class="spinner-border spinner-border-sm"></span>
+            Generating minutes via Ollama…
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(meetingMinutes))
+    {
+        <div class="card">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span>Meeting Minutes</span>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="CopyMinutes">Copy</button>
+            </div>
+            <div class="card-body">
+                <pre class="mb-0" style="white-space:pre-wrap;font-size:.85rem;">@meetingMinutes</pre>
+            </div>
+        </div>
+    }
+</div>
+
 @code {
     private IEnumerable<string> clientNames = [];
     private List<string> sheetNames = [];
@@ -206,10 +301,123 @@
     private string emailSubject = string.Empty;
     private string emailBody = string.Empty;
 
+    // ── Meeting Minutes state ──
+    private bool minutesModelReady = false;
+    private bool isRecording = false;
+    private bool isTranscribing = false;
+    private bool isGeneratingMinutes = false;
+    private string transcript = string.Empty;
+    private string meetingMinutes = string.Empty;
+    private string minutesError = string.Empty;
+    private string recordingDuration = "0:00";
+    private System.Timers.Timer? _recordingTimer;
+    private int _recordingSeconds = 0;
+
     protected override void OnInitialized()
     {
         clientNames = CsatService.GetClientNames();
         emailFrom = CsatService.GetDefaultFromEmail();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            minutesModelReady = MinutesService.IsModelDownloaded();
+            if (!minutesModelReady)
+            {
+                StateHasChanged();
+                await Task.Run(async () => await MinutesService.EnsureModelDownloadedAsync());
+                minutesModelReady = true;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task StartRecording()
+    {
+        minutesError = string.Empty;
+        try
+        {
+            await JS.InvokeVoidAsync("audioRecorder.start");
+            isRecording = true;
+            _recordingSeconds = 0;
+            _recordingTimer = new System.Timers.Timer(1000);
+            _recordingTimer.Elapsed += (_, _) =>
+            {
+                _recordingSeconds++;
+                recordingDuration = $"{_recordingSeconds / 60}:{_recordingSeconds % 60:D2}";
+                InvokeAsync(StateHasChanged);
+            };
+            _recordingTimer.Start();
+        }
+        catch (Exception ex)
+        {
+            minutesError = $"Microphone access error: {ex.Message}";
+        }
+    }
+
+    private async Task StopAndTranscribe()
+    {
+        _recordingTimer?.Stop();
+        _recordingTimer?.Dispose();
+        _recordingTimer = null;
+        isRecording = false;
+        isTranscribing = true;
+        minutesError = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            var base64Wav = await JS.InvokeAsync<string>("audioRecorder.stop");
+            var wavBytes = Convert.FromBase64String(base64Wav);
+            transcript = await MinutesService.TranscribeAsync(wavBytes);
+        }
+        catch (Exception ex)
+        {
+            minutesError = $"Transcription error: {ex.Message}";
+        }
+        finally
+        {
+            isTranscribing = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GenerateMinutes()
+    {
+        if (string.IsNullOrWhiteSpace(transcript)) return;
+        isGeneratingMinutes = true;
+        minutesError = string.Empty;
+        meetingMinutes = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            meetingMinutes = await MinutesService.GenerateMinutesAsync(transcript);
+        }
+        catch (Exception ex)
+        {
+            minutesError = ex.Message;
+        }
+        finally
+        {
+            isGeneratingMinutes = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CopyMinutes()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", meetingMinutes);
+    }
+
+    private void ClearMinutes()
+    {
+        transcript = string.Empty;
+        meetingMinutes = string.Empty;
+        minutesError = string.Empty;
+        recordingDuration = "0:00";
     }
 
     private async Task OnClientChanged(ChangeEventArgs e)

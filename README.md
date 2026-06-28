@@ -60,6 +60,7 @@ Key settings in `appsettings.json` under `AppSettings`:
 |---|---|
 | `OneDriveLocation` | Local OneDrive sync root path |
 | `ReportAndDataFolder` | Subfolder containing project data Excel files |
+| `SprintReportsAvailabilityJSONFileName` | Json file containing sprint report names  |
 | `MetricsFolder` | Subfolder containing team sprint metrics sheets |
 | `SprintMetricsReportTemplatePath` | Full path to the PPTX report template |
 | `PMOEmailContent` | Email body template with `##` and `#Link#` placeholders |
