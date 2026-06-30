@@ -19,14 +19,22 @@ public class SprintDashboardService
     public (bool exists, DateTime? lastUpdated) GetDashboardInfo()
     {
         var path = _settings.SprintDashboardHtmlPath;
+        _logger.LogInformation("SprintDashboard: HtmlPath='{Path}', FileExists={Exists}", path, File.Exists(path));
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             return (false, null);
         return (true, File.GetLastWriteTime(path));
     }
 
-    public bool IsScriptConfigured =>
-        !string.IsNullOrWhiteSpace(_settings.SprintDashboardScriptPath) &&
-        File.Exists(_settings.SprintDashboardScriptPath);
+    public bool IsScriptConfigured
+    {
+        get
+        {
+            var scriptPath = _settings.SprintDashboardScriptPath;
+            var exists = !string.IsNullOrWhiteSpace(scriptPath) && File.Exists(scriptPath);
+            _logger.LogInformation("SprintDashboard: ScriptPath='{Path}', IsConfigured={Configured}", scriptPath, exists);
+            return exists;
+        }
+    }
 
     public async Task<(bool success, string message)> RunScriptAsync()
     {

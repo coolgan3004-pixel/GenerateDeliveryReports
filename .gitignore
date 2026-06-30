@@ -3,6 +3,8 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+##Ignore Whispermodels
+**/WhisperModels/
 # dotenv files
 .env
 
