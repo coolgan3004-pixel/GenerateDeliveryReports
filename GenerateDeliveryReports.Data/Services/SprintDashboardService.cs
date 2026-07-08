@@ -42,7 +42,8 @@ public class SprintDashboardService
         if (string.IsNullOrWhiteSpace(scriptPath) || !File.Exists(scriptPath))
             return (false, "Sprint dashboard script path not configured or file not found.");
 
-        var psi = new ProcessStartInfo("python", $"\"{scriptPath}\"")
+        var pythonExe = string.IsNullOrWhiteSpace(_settings.PythonExePath) ? "python" : _settings.PythonExePath;
+        var psi = new ProcessStartInfo(pythonExe, $"\"{scriptPath}\"")
         {
             WorkingDirectory = Path.GetDirectoryName(scriptPath),
             RedirectStandardOutput = true,

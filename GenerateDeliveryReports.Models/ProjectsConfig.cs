@@ -40,6 +40,7 @@ public class AppSettings
     public string SprintDashboardHtmlPath { get; set; } = string.Empty;
     public string SprintReportStatusJsonPath { get; set; } = string.Empty;
     public string SprintDashboardScriptPath { get; set; } = string.Empty;
+    public string PythonExePath { get; set; } = "python";
     public List<Project> Projects { get; set; } = [];
     public CsatConfig CSAT { get; set; } = new();
     public EmailSetting EmailSettings { get; set; } = new();
