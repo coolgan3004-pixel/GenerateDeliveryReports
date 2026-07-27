@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "GenerateDeliveryReports",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "GenerateDeliveryReports/GenerateDeliveryReports.csproj", "--launch-profile", "http"],
+      "port": 5159
+    }
+  ]
+}

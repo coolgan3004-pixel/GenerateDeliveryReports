@@ -8,6 +8,7 @@ public interface IDataProcessor
 
     IEnumerable<string> GetSprintNames(string projectName);
     IEnumerable<SprintInfo> GetSprintNamesWithDate(string projectName);
+    IEnumerable<SprintMetrics> GetSprintMetricsHistory(string projectName);
     SprintMetrics? GetSprintMetrics(SprintInfo sprint);
     IEnumerable<string> GetProjectNames();
     (bool bReturn, string pdfPath) GeneratePresentation(ReportDataParameters reportParams, bool generatePdf = true);

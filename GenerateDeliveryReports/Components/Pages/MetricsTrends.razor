@@ -1,0 +1,331 @@
+@page "/metrics-trends"
+@rendermode InteractiveServer
+@using System.Text
+@using GenerateDeliveryReports.Models
+@using GenerateDeliveryReports.Data.Services
+@inject SprintReportService Service
+@inject ILogger<MetricsTrends> Logger
+
+<PageTitle>Metrics Trends</PageTitle>
+
+<div class="container-fluid">
+    <h3 class="mb-3">Metrics Trends</h3>
+
+    <div class="row g-2 align-items-end mb-3">
+        <div class="col-auto">
+            <label class="form-label small fw-semibold mb-1">Application</label>
+            <select class="form-select form-select-sm" style="min-width:220px" @onchange="OnProjectChanged" disabled="@_loading">
+                @foreach (var name in _projectNames)
+                {
+                    <option value="@name" selected="@(name == _selectedProject)">@name</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <label class="form-label small fw-semibold mb-1 d-block">Sprints</label>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn @(_range == RangeOption.Last3 ? "btn-primary" : "btn-outline-secondary")" @onclick='() => SetRange(RangeOption.Last3)'>Last 3</button>
+                <button type="button" class="btn @(_range == RangeOption.Last6 ? "btn-primary" : "btn-outline-secondary")" @onclick='() => SetRange(RangeOption.Last6)'>Last 6</button>
+                <button type="button" class="btn @(_range == RangeOption.All ? "btn-primary" : "btn-outline-secondary")" @onclick='() => SetRange(RangeOption.All)'>All</button>
+            </div>
+        </div>
+
+        <div class="col-auto">
+            <label class="form-label small fw-semibold mb-1 d-block">View</label>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn @(_view == ViewOption.Chart ? "btn-primary" : "btn-outline-secondary")" @onclick='() => _view = ViewOption.Chart'>Chart</button>
+                <button type="button" class="btn @(_view == ViewOption.Table ? "btn-primary" : "btn-outline-secondary")" @onclick='() => _view = ViewOption.Table'>Table</button>
+            </div>
+        </div>
+
+        <div class="col-auto ms-auto">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="showAllMetrics" checked="@_showAllMetrics" @onchange="e => _showAllMetrics = (bool)e.Value!" />
+                <label class="form-check-label small" for="showAllMetrics">Show all metrics</label>
+            </div>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="d-flex align-items-center gap-2 text-muted small">
+            <span class="spinner-border spinner-border-sm"></span>
+            Loading sprint history…
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(_errorMessage))
+    {
+        <div class="alert alert-danger py-2 px-3 small">@_errorMessage</div>
+    }
+    else if (FilteredHistory.Count == 0)
+    {
+        <p class="text-muted">No sprint history found for this application.</p>
+    }
+    else
+    {
+        var metrics = _showAllMetrics ? CuratedMetrics.Concat(ExtraMetrics) : CuratedMetrics;
+
+        @if (_view == ViewOption.Chart)
+        {
+            <div class="row row-cols-1 row-cols-lg-2 g-3">
+                @foreach (var metric in metrics)
+                {
+                    var current = FilteredHistory.Count > 0 ? metric.Value(FilteredHistory[^1]) : null;
+                    var previous = FilteredHistory.Count > 1 ? metric.Value(FilteredHistory[^2]) : null;
+                    var (arrow, cssClass) = TrendIndicator(metric, current, previous);
+
+                    <div class="col">
+                        <div class="card h-100">
+                            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                                <span>@metric.Label</span>
+                                @if (!string.IsNullOrEmpty(arrow))
+                                {
+                                    <span class="@cssClass small">@arrow</span>
+                                }
+                            </div>
+                            <div class="card-body p-2">
+                                @BuildChartSvg(metric, FilteredHistory)
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="min-width:200px">Metric</th>
+                            @foreach (var sprint in FilteredHistory)
+                            {
+                                <th class="text-nowrap">@ShortLabel(sprint.Sprint)</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var metric in metrics)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@metric.Label</td>
+                                @for (int i = 0; i < FilteredHistory.Count; i++)
+                                {
+                                    var current = metric.Value(FilteredHistory[i]);
+                                    var previous = i > 0 ? metric.Value(FilteredHistory[i - 1]) : null;
+                                    var (arrow, cssClass) = TrendIndicator(metric, current, previous);
+                                    <td class="text-nowrap">
+                                        @FormatValue(metric, current)
+                                        @if (i > 0)
+                                        {
+                                            <span class="@cssClass ms-1" title="vs @ShortLabel(FilteredHistory[i - 1].Sprint)">@arrow</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private enum RangeOption { Last3, Last6, All }
+    private enum ViewOption { Chart, Table }
+
+    private sealed record MetricDef(string Key, string Label, bool? HigherIsBetter, bool IsPercent, Func<SprintMetrics, double?> Value);
+
+    private IEnumerable<string> _projectNames = [];
+    private string _selectedProject = string.Empty;
+    private List<SprintMetrics> _history = [];
+    private RangeOption _range = RangeOption.Last6;
+    private ViewOption _view = ViewOption.Chart;
+    private bool _showAllMetrics = false;
+    private bool _loading = false;
+    private string? _errorMessage;
+
+    private List<SprintMetrics> FilteredHistory => _range switch
+    {
+        RangeOption.Last3 => _history.TakeLast(3).ToList(),
+        RangeOption.Last6 => _history.TakeLast(6).ToList(),
+        _ => _history
+    };
+
+    private static readonly List<MetricDef> CuratedMetrics = new()
+    {
+        new("commitment", "Commitment Index", true, true, m => Scale(ParseValue(m.CommitmentIndex))),
+        new("velocity", "Velocity", true, false, m => ParseValue(m.Velocity)),
+        new("coverage", "Code Coverage", true, true, m => ParseValue(m.CodeQualityIndex)),
+        new("defects", "Total Defects (QA + Escaped)", false, false, m => (ParseValue(m.QADefects) ?? 0) + (ParseValue(m.EscapedDefects) ?? 0)),
+        new("backlog", "Backlog Health", true, false, m => ParseValue(m.BacklogHealth)),
+    };
+
+    private static readonly List<MetricDef> ExtraMetrics = new()
+    {
+        new("committed", "Committed", null, false, m => ParseValue(m.Committed)),
+        new("delivered", "Delivered", null, false, m => ParseValue(m.Delivered)),
+        new("crcInternal", "Code Review Comments – Internal", null, false, m => ParseValue(m.CodeReviewCommentsInternal)),
+        new("crcExternal", "Code Review Comments – External", null, false, m => ParseValue(m.CodeReviewCommentsExternal)),
+        new("qaDefects", "QA Defects", false, false, m => ParseValue(m.QADefects)),
+        new("escapedDefects", "Escaped Defects", false, false, m => ParseValue(m.EscapedDefects)),
+        new("plannedLeaves", "Planned Leaves", null, false, m => ParseValue(m.PlannedLeaves)),
+        new("availedLeaves", "Availed Leaves", null, false, m => ParseValue(m.AvailedLeaves)),
+    };
+
+    protected override void OnInitialized()
+    {
+        _projectNames = Service.GetProjectNames();
+        _selectedProject = _projectNames.FirstOrDefault() ?? string.Empty;
+        LoadHistory();
+    }
+
+    private void OnProjectChanged(ChangeEventArgs e)
+    {
+        _selectedProject = e.Value?.ToString() ?? string.Empty;
+        LoadHistory();
+    }
+
+    private void SetRange(RangeOption range) => _range = range;
+
+    private void LoadHistory()
+    {
+        if (string.IsNullOrEmpty(_selectedProject))
+        {
+            _history = [];
+            return;
+        }
+
+        _loading = true;
+        _errorMessage = null;
+        try
+        {
+            _history = Service.GetSprintMetricsHistory(_selectedProject).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "MetricsTrends - Failed to load history for {Project}", _selectedProject);
+            _errorMessage = $"Could not load sprint history: {ex.Message}";
+            _history = [];
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static double? ParseValue(object? raw)
+    {
+        if (raw == null) return null;
+        var s = raw.ToString()?.Trim();
+        if (string.IsNullOrEmpty(s)) return null;
+        s = s.TrimEnd('%');
+        return double.TryParse(s, out var d) ? d : null;
+    }
+
+    private static double? Scale(double? fraction) => fraction.HasValue ? fraction * 100 : null;
+
+    private static string ShortLabel(string sprint)
+    {
+        if (string.IsNullOrWhiteSpace(sprint)) return string.Empty;
+        var idx = sprint.IndexOf('(');
+        var s = idx > 0 ? sprint[..idx].Trim() : sprint.Trim();
+        return s.Length > 14 ? s[..14] + "…" : s;
+    }
+
+    private static string FormatValue(MetricDef metric, double? value)
+    {
+        if (!value.HasValue) return "—";
+        return metric.IsPercent ? $"{value.Value:F0}%" : $"{value.Value:0.##}";
+    }
+
+    private (string arrow, string cssClass) TrendIndicator(MetricDef metric, double? current, double? previous)
+    {
+        if (!current.HasValue || !previous.HasValue || Math.Abs(current.Value - previous.Value) < 0.0001)
+            return ("–", "trend-flat");
+
+        bool up = current.Value > previous.Value;
+        if (metric.HigherIsBetter == null)
+            return (up ? "▲" : "▼", "trend-flat");
+
+        bool improved = metric.HigherIsBetter.Value ? up : !up;
+        return (up ? "▲" : "▼", improved ? "trend-up" : "trend-down");
+    }
+
+    /// <summary>Traditional line chart: gridlines, x-axis sprint labels, straight segments
+    /// between points (no smoothing, so the line never implies data between real sprints),
+    /// one consistent line color. Every point carries a native SVG &lt;title&gt; tooltip with
+    /// its exact value, reachable on hover without any JS.</summary>
+    private MarkupString BuildChartSvg(MetricDef metric, List<SprintMetrics> sprints)
+    {
+        const int width = 640;
+        const int height = 220;
+        const int padLeft = 40;
+        const int padRight = 16;
+        const int padTop = 18;
+        const int padBottom = 34;
+        var ic = System.Globalization.CultureInfo.InvariantCulture;
+
+        var points = sprints.Select(s => (Label: ShortLabel(s.Sprint), Value: metric.Value(s))).ToList();
+        var known = points.Where(p => p.Value.HasValue).Select(p => p.Value!.Value).ToList();
+
+        if (known.Count == 0)
+            return (MarkupString)"<div class=\"text-muted small text-center py-5\">No data for this range</div>";
+
+        double min = metric.IsPercent ? 0 : known.Min();
+        double max = metric.IsPercent ? 100 : known.Max();
+        if (Math.Abs(max - min) < 0.0001)
+        {
+            if (metric.IsPercent) { min = 0; max = 100; }
+            else { min -= 1; max += 1; }
+        }
+
+        double plotW = width - padLeft - padRight;
+        double plotH = height - padTop - padBottom;
+
+        double XAt(int i) => points.Count == 1 ? padLeft + plotW / 2 : padLeft + plotW * i / (points.Count - 1);
+        double YAt(double v) => padTop + plotH - (v - min) / (max - min) * plotH;
+
+        var sb = new StringBuilder();
+        sb.Append(ic, $"<svg viewBox=\"0 0 {width} {height}\" class=\"trend-chart\" role=\"img\" aria-label=\"{System.Net.WebUtility.HtmlEncode(metric.Label)} trend\">");
+
+        for (int g = 0; g <= 4; g++)
+        {
+            double y = padTop + plotH * g / 4;
+            sb.Append(ic, $"<line x1=\"{padLeft}\" y1=\"{y:F1}\" x2=\"{width - padRight}\" y2=\"{y:F1}\" class=\"trend-grid\" />");
+        }
+
+        var knownIndexed = points.Select((p, i) => (i, p)).Where(t => t.p.Value.HasValue).ToList();
+        if (knownIndexed.Count > 1)
+        {
+            var pathPts = string.Join(" ", knownIndexed.Select(t => string.Create(ic, $"{XAt(t.i):F1},{YAt(t.p.Value!.Value):F1}")));
+            sb.Append(ic, $"<polyline points=\"{pathPts}\" class=\"trend-line\" />");
+        }
+
+        int labelStride = points.Count > 10 ? (int)Math.Ceiling(points.Count / 10.0) : 1;
+
+        for (int i = 0; i < points.Count; i++)
+        {
+            var p = points[i];
+            double x = XAt(i);
+
+            if (p.Value.HasValue)
+            {
+                double y = YAt(p.Value.Value);
+                var displayVal = FormatValue(metric, p.Value);
+                sb.Append(ic, $"<circle cx=\"{x:F1}\" cy=\"{y:F1}\" r=\"3.5\" class=\"trend-dot\"><title>{System.Net.WebUtility.HtmlEncode(p.Label)}: {displayVal}</title></circle>");
+
+                if (i == points.Count - 1)
+                    sb.Append(ic, $"<text x=\"{x:F1}\" y=\"{y - 10:F1}\" class=\"trend-value-label\" text-anchor=\"end\">{displayVal}</text>");
+            }
+
+            if (i % labelStride == 0 || i == points.Count - 1)
+                sb.Append(ic, $"<text x=\"{x:F1}\" y=\"{height - padBottom + 16}\" class=\"trend-x-label\" text-anchor=\"middle\">{System.Net.WebUtility.HtmlEncode(p.Label)}</text>");
+        }
+
+        sb.Append("</svg>");
+        return (MarkupString)sb.ToString();
+    }
+}

@@ -14,6 +14,7 @@ public interface IWrapper : IDisposable
     void Open(string filePath);
     void Close();
     List<KeyValue> ReadRangeWithAddress(string sheetName, string range);
+    IEnumerable<T> ReadRowsByColumnIndex<T>(string sheetName, Dictionary<int, string> colIndexToProperty, int rowStart = 2) where T : class, new();
     List<T> ReadfromRangeAsCollection<T>(string sheetName, string range) where T : class;
     void WriteToRangeFromCollection<T>(string sheetName, string range, IEnumerable<T> collection) where T : class;
     object ReadCell(string sheetName, int row, int col);
@@ -159,6 +160,48 @@ public class ExcelWrapper : IWrapper
                 }
             }
             if (count != dicColVariablePair.Count)
+                values.Add(obj);
+        }
+        return values;
+    }
+
+    /// <summary>
+    /// Reads rows mapping fixed column positions (1-based) directly to model properties,
+    /// bypassing header-text lookup. Use when header wording can differ across workbooks
+    /// but the column layout is fixed.
+    /// </summary>
+    public IEnumerable<T> ReadRowsByColumnIndex<T>(string sheetName, Dictionary<int, string> colIndexToProperty, int rowStart = 2) where T : class, new()
+    {
+        var ws = _package!.Workbook.Worksheets[sheetName];
+        int rowCount = ws!.Dimension.Rows;
+        List<T> values = new();
+
+        for (int row = rowStart; row <= rowCount; row++)
+        {
+            var obj = new T();
+            Type objType = typeof(T);
+            int count = 0;
+
+            foreach (var colPropPair in colIndexToProperty)
+            {
+                PropertyInfo? prop = objType.GetProperty(colPropPair.Value);
+                var val = ws.Cells[row, colPropPair.Key].Value;
+                if (val == null)
+                    count++;
+                try
+                {
+                    prop?.SetValue(obj, val, null);
+                }
+                catch (Exception ex)
+                {
+                    if (ex.Message.ToLower() == "object of type 'system.double' cannot be converted to type 'system.datetime'.")
+                    {
+                        DateTime dt = DateTime.Parse(DateTime.FromOADate(val!.ToLong()).ToString("MM-dd-yyyy"));
+                        prop?.SetValue(obj, dt);
+                    }
+                }
+            }
+            if (count != colIndexToProperty.Count)
                 values.Add(obj);
         }
         return values;

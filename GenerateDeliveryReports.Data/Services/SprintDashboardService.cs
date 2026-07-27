@@ -52,7 +52,7 @@ public class SprintDashboardService
             CreateNoWindow = true
         };
         psi.Environment["SPRINT_BRIEF_ROOT"] = Path.Combine(
-            _settings.OneDriveLocation, _settings.MetricsFolder);
+            _settings.ResolvedOneDriveLocation, _settings.MetricsFolder);
         psi.Environment["SPRINT_BRIEF_OUT"] = _settings.SprintDashboardHtmlPath;
         try
         {

@@ -16,6 +16,7 @@ public class SprintReportService
 
     public IEnumerable<string> GetSprintNames(string projectName) => _dataProcessor.GetSprintNames(projectName);
     public IEnumerable<SprintInfo> GetSprintNamesWithDate(string projectName) => _dataProcessor.GetSprintNamesWithDate(projectName);
+    public IEnumerable<SprintMetrics> GetSprintMetricsHistory(string projectName) => _dataProcessor.GetSprintMetricsHistory(projectName);
 
     public SprintMetrics? GetSprintMetrics(SprintInfo sprint) => _dataProcessor.GetSprintMetrics(sprint);
 

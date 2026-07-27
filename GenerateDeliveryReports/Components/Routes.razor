@@ -1,6 +1,22 @@
-﻿<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+            <NotAuthorized>
+                @{ RedirectToLogin(); }
+            </NotAuthorized>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>
+
+@code {
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    // Only reached when Entra auth is actually configured (AddAuthorization's FallbackPolicy is
+    // only set in that case -- see Program.cs), so this route always exists when it fires.
+    private void RedirectToLogin()
+    {
+        var redirectUri = Uri.EscapeDataString(Nav.Uri);
+        Nav.NavigateTo($"MicrosoftIdentity/Account/SignIn?redirectUri={redirectUri}", forceLoad: true);
+    }
+}

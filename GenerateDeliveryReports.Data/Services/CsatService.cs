@@ -40,7 +40,7 @@ public class CsatService
         var client = GetClient(clientName)
             ?? throw new InvalidOperationException($"Client '{clientName}' not found.");
 
-        var folder = Path.Combine(_settings.OneDriveLocation, _settings.CSAT.CSATFolder.TrimStart('\\'));
+        var folder = Path.Combine(_settings.ResolvedOneDriveLocation, _settings.CSAT.CSATFolder.TrimStart('\\'));
         return Path.GetFullPath(Path.Combine(folder, client.ClientSurveyFilePath));
     }
 

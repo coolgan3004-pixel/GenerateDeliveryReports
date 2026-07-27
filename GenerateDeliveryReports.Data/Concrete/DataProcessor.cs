@@ -49,7 +49,7 @@ public partial class DataProcessor : IDataProcessor
             if (project == null)
                 throw new Exception(ErrorCodes.GetMessage(ErrorCodes.ERR_400, projectName));
 
-            var path = Path.Combine(_appSettings.OneDriveLocation, _appSettings.ReportAndDataFolder, project.DataFileName);
+            var path = Path.Combine(_appSettings.ResolvedOneDriveLocation, _appSettings.ReportAndDataFolder, project.DataFileName);
             _logger.LogInformation("GetSprintNames - Resolved path: {Path}", path);
 
             if (!File.Exists(path))
@@ -71,7 +71,7 @@ public partial class DataProcessor : IDataProcessor
             var reportData = GetReportDataForProject(projectName).ToList();
             _logger.LogInformation("GetSprintNames - Report data rows: {Count}", reportData.Count);
 
-            var sprintNames = reportData.Select(x => x.Sprint).Skip(1).ToArray();
+            var sprintNames = reportData.Select(x => x.Sprint).ToArray();
             _logger.LogInformation("GetSprintNames - Sprint names found: {Count}", sprintNames.Length);
 
             if (sprintNames.Length == 0)
@@ -91,7 +91,7 @@ public partial class DataProcessor : IDataProcessor
         var sprintNames = GetSprintNames(projectName);
         var project = _appSettings.Projects.Single(x => x.ProjectName == projectName);
         var projectDir = Path.GetDirectoryName(
-            Path.Combine(_appSettings.OneDriveLocation, _appSettings.ReportAndDataFolder, project.DataFileName))!;
+            Path.Combine(_appSettings.ResolvedOneDriveLocation, _appSettings.ReportAndDataFolder, project.DataFileName))!;
 
         var result = new List<SprintInfo>();
         foreach (var sprintName in sprintNames)
@@ -181,7 +181,7 @@ public partial class DataProcessor : IDataProcessor
 
             foreach (var workbook in _appSettings.Projects.First(x => x.ProjectName == projectName).MetricsSheetPath)
             {
-                var filePath = Path.Combine(_appSettings.OneDriveLocation, _appSettings.MetricsFolder, workbook);
+                var filePath = Path.Combine(_appSettings.ResolvedOneDriveLocation, _appSettings.MetricsFolder, workbook);
                 var recentFile = filePath.GetRecentlyModifiedSimilarFile();
                 if (recentFile == null) continue;
 
@@ -230,7 +230,7 @@ public partial class DataProcessor : IDataProcessor
         }*/
 
         // Always save chart image and pre-fill narrative fields, regardless of data source
-        var path = Path.Combine(_appSettings.OneDriveLocation, _appSettings.ReportAndDataFolder,
+        var path = Path.Combine(_appSettings.ResolvedOneDriveLocation, _appSettings.ReportAndDataFolder,
             _appSettings.Projects.First(x => x.ProjectName == projectName).DataFileName);
 
         sprintMetrics.ImagePath = SaveChartImage(path, "Scorecard");
@@ -240,7 +240,7 @@ public partial class DataProcessor : IDataProcessor
        
 
         var outputPPTPath = Path.Combine(
-            Path.GetDirectoryName(Path.Combine(_appSettings.OneDriveLocation, _appSettings.ReportAndDataFolder,
+            Path.GetDirectoryName(Path.Combine(_appSettings.ResolvedOneDriveLocation, _appSettings.ReportAndDataFolder,
                 _appSettings.Projects.Single(x => x.ProjectName == projectName).DataFileName))!,
             $"GlobalPayments-{projectName}-DeliveryQualitySummaryReport-{sprintNameFormatted}.pptx");
 
@@ -269,7 +269,7 @@ public partial class DataProcessor : IDataProcessor
             var resolvedMetricsPaths = new List<string>();
             foreach (var metricsPath in metricsPaths)
             {
-                var resolvedPath = Path.Combine(_appSettings.OneDriveLocation, _appSettings.MetricsFolder, metricsPath);
+                var resolvedPath = Path.Combine(_appSettings.ResolvedOneDriveLocation, _appSettings.MetricsFolder, metricsPath);
                 if (resolvedPath.GetRecentlyModifiedSimilarFile() == null)
                 {
                     _logger.LogWarning("GetSprintMetrics - Metrics sheet file not found: {Path}", resolvedPath);
@@ -365,7 +365,7 @@ public partial class DataProcessor : IDataProcessor
             ?? throw new Exception(ErrorCodes.GetMessage(ErrorCodes.ERR_400, reportParams.ProjectName));
 
         var outputPPTPath = Path.Combine(
-            Path.GetDirectoryName(Path.Combine(_appSettings.OneDriveLocation, _appSettings.ReportAndDataFolder,
+            Path.GetDirectoryName(Path.Combine(_appSettings.ResolvedOneDriveLocation, _appSettings.ReportAndDataFolder,
                 project.DataFileName))!,
             $"GlobalPayments-{reportParams.ProjectName}-DeliveryQualitySummaryReport-{reportParams.SprintName}.pptx");
         var outputPDFPath = Path.Combine(_appSettings.TempPath,
@@ -609,27 +609,32 @@ public partial class DataProcessor : IDataProcessor
         return chartFileName;
     }
 
+    /// <summary>
+    /// Column positions in the "Data" sheet are fixed (A-N) rather than matched by header
+    /// text, since header wording can differ slightly across projects' Data files. Column L
+    /// (Last Sprint?) is intentionally not read here.
+    /// </summary>
+    private static readonly Dictionary<int, string> DataSheetColumnMap = new()
+    {
+        { 1, "Sprint" },
+        { 2, "Committed" },
+        { 3, "Delivered" },
+        { 4, "CommitmentIndex" },
+        { 5, "Velocity" },
+        { 6, "CodeQualityIndex" },
+        { 7, "CodeReviewCommentsInternal" },
+        { 8, "CodeReviewCommentsExternal" },
+        { 9, "QADefects" },
+        { 10, "EscapedDefects" },
+        { 11, "BacklogHealth" },
+        { 13, "PlannedLeaves" },
+        { 14, "AvailedLeaves" }
+    };
+
     private IEnumerable<SprintMetrics> GetReportDataForProject(string projectName)
     {
-        var dicColVar = new Dictionary<string, string>
-        {
-            { "Sprint", "Sprint" },
-            { "Committed", "Committed" },
-            { "Delivered", "Delivered" },
-            { "Commitment Index", "CommitmentIndex" },
-            { "Velocity", "Velocity" },
-            { "Code Coverage", "CodeQualityIndex" },
-            { "Code Review Comments - Internal", "CodeReviewCommentsInternal" },
-            { "Code Review Comments - External", "CodeReviewCommentsExternal" },
-            { "QA Defects", "QADefects" },
-            { "Escaped Defects", "EscapedDefects" },
-            { "Backlog Health", "BacklogHealth" },
-            { "Last Sprint?", "LastSprint" },
-            { "Remarks", "Remarks" }
-        };
-
         using var wrapper = new ExcelWrapper();
-        var filePath = Path.Combine(_appSettings.OneDriveLocation, _appSettings.ReportAndDataFolder,
+        var filePath = Path.Combine(_appSettings.ResolvedOneDriveLocation, _appSettings.ReportAndDataFolder,
             _appSettings.Projects.First(x => x.ProjectName == projectName).DataFileName);
 
         _logger.LogInformation("GetReportDataForProject - Path: {Path}", filePath);
@@ -643,10 +648,15 @@ public partial class DataProcessor : IDataProcessor
 
         _logger.LogInformation("GetReportDataForProject - Opening: {File}", recentFile.FullName);
         wrapper.Open(recentFile.FullName);
-        var data = wrapper.ReadSpecificColumnsFromRange<SprintMetrics>("Data", dicColVar, 1, "1:1").ToList();
+        var data = wrapper.ReadRowsByColumnIndex<SprintMetrics>("Data", DataSheetColumnMap, rowStart: 2)
+            .Where(x => !string.IsNullOrWhiteSpace(x.Sprint))
+            .ToList();
         _logger.LogInformation("GetReportDataForProject - Rows read: {Count}", data.Count);
         return data;
     }
+
+    /// <summary>Full sprint-by-sprint metrics history for a project's Data sheet, oldest first. Used by the Metrics Trends page.</summary>
+    public IEnumerable<SprintMetrics> GetSprintMetricsHistory(string projectName) => GetReportDataForProject(projectName);
 
     private List<object?[]> GetDashboardDataForRange(IEnumerable<string> resolvedFilePaths, string range)
     {

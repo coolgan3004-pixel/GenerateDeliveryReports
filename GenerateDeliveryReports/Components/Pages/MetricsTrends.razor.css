@@ -1,0 +1,17 @@
+/* Colors the small trend arrow next to each metric's name (chart-view header) and the
+   per-cell arrows in table view. Both are written literally in the .razor markup, so
+   Blazor's scoped-CSS isolation applies correctly here (unlike the chart SVG itself,
+   which is built dynamically -- see wwwroot/app.css for its styling). */
+.trend-up {
+    color: #2f6f4f;
+    font-weight: 600;
+}
+
+.trend-down {
+    color: #b0413e;
+    font-weight: 600;
+}
+
+.trend-flat {
+    color: #adb5bd;
+}

@@ -13,6 +13,8 @@ public class SprintMetrics
     public object? QADefects { get; set; }
     public object? EscapedDefects { get; set; }
     public object? BacklogHealth { get; set; }
+    public object? PlannedLeaves { get; set; }
+    public object? AvailedLeaves { get; set; }
     public string LastSprint { get; set; } = string.Empty;
     public string SprintNameFromMetricsSheet { get; set; } = string.Empty;
     public object? Remarks { get; set; }

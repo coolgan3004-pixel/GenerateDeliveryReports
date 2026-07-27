@@ -58,3 +58,77 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* Metrics Trends charts: built as raw SVG markup via MarkupString, so these rules must be
+   global rather than scoped -- Blazor's CSS isolation only attaches its scope attribute to
+   markup written literally in a .razor file, not to dynamically injected HTML. */
+.trend-chart {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.trend-grid {
+    stroke: #e9ecef;
+    stroke-width: 1;
+}
+
+.trend-line {
+    fill: none;
+    stroke: #2f6690;
+    stroke-width: 2;
+}
+
+.trend-dot {
+    fill: #2f6690;
+}
+
+.trend-value-label {
+    font-size: 11px;
+    fill: #334155;
+    font-weight: 600;
+}
+
+.trend-x-label {
+    font-size: 10px;
+    fill: #94a3b8;
+}
+
+/* Daily Briefing: the Claude-generated markdown is converted to HTML server-side and rendered
+   via MarkupString, so -- same reasoning as the trend charts above -- these rules must be
+   global rather than scoped. */
+.briefing-content {
+    max-width: 860px;
+}
+
+.briefing-content h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.briefing-content h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 1.75rem;
+    margin-bottom: .75rem;
+}
+
+.briefing-content h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-top: 1.25rem;
+    margin-bottom: .5rem;
+}
+
+.briefing-content ul, .briefing-content ol {
+    padding-left: 1.25rem;
+}
+
+.briefing-content li {
+    margin-bottom: .35rem;
+}
+
+.briefing-content p {
+    margin-bottom: .75rem;
+}

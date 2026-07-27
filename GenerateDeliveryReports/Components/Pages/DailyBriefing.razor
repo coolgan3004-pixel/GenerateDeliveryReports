@@ -1,0 +1,79 @@
+@page "/daily-briefing"
+@using GenerateDeliveryReports.Data.Services
+@rendermode InteractiveServer
+
+@inject BriefingGenerator briefingGenerator
+@inject BriefingCache briefingCache
+@inject ILogger<DailyBriefing> Logger
+
+<PageTitle>Daily Briefing</PageTitle>
+
+<div class="d-flex align-items-center justify-content-between mb-2">
+    <h3>Daily Briefing</h3>
+    <button class="btn btn-primary btn-sm" @onclick="Generate" disabled="@_generating">
+        @if (_generating)
+        {
+            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+            <span>Generating…</span>
+        }
+        else
+        {
+            <span>Generate Now</span>
+        }
+    </button>
+</div>
+
+@if (_errorMessage is not null)
+{
+    <div class="alert alert-danger py-2 px-3 mb-2 small">@_errorMessage</div>
+}
+
+@if (_latest is not null)
+{
+    <p class="text-muted mb-3" style="font-size:0.85rem">Generated: @_latest.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss")</p>
+    <div class="card">
+        <div class="card-body briefing-content">
+            @((MarkupString)_latest.Html)
+        </div>
+    </div>
+}
+else if (!_generating)
+{
+    <p class="text-muted">
+        No briefing generated yet. Click <strong>Generate Now</strong> to create today's briefing.
+    </p>
+}
+
+@code {
+    private bool _generating;
+    private string? _errorMessage;
+    private BriefingCache.BriefingSnapshot? _latest;
+
+    protected override void OnInitialized()
+    {
+        _latest = briefingCache.Latest;
+    }
+
+    private async Task Generate()
+    {
+        _generating = true;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            await briefingGenerator.GenerateAsync();
+            _latest = briefingCache.Latest;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "DailyBriefing - Generate failed");
+            _errorMessage = $"Failed to generate briefing: {ex.Message}";
+        }
+        finally
+        {
+            _generating = false;
+            StateHasChanged();
+        }
+    }
+}
