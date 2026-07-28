@@ -75,8 +75,7 @@ namespace GenerateDeliveryReports.Data.Services
         {
             try
             {
-                var archiveFolder = _options.Value.BriefingArchiveFolder;
-                Directory.CreateDirectory(archiveFolder); // ensure it exists
+                var archiveFolder = _options.Value.ResolvedBriefingArchiveFolder;
 
                 var recentFiles = Directory.GetFiles(archiveFolder, "*.md")
                     .OrderByDescending(f => f)

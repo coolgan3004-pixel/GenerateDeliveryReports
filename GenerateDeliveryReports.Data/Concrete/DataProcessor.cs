@@ -356,7 +356,7 @@ public partial class DataProcessor : IDataProcessor
     public (bool bReturn, string pdfPath) GeneratePresentation(ReportDataParameters reportParams, bool generatePdf = true)
     {
         var presentation = new Presentation();
-        var templatepath = _appSettings.SprintMetricsReportTemplatePath;        
+        var templatepath = _appSettings.ResolvedSprintMetricsReportTemplatePath;
         
         if (!File.Exists(templatepath))
             throw new Exception(ErrorCodes.GetMessage(ErrorCodes.ERR_103, templatepath));

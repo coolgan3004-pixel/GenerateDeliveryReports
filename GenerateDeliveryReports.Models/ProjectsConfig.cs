@@ -32,6 +32,20 @@ public class AppSettings
         }
     }
 
+    /// <summary>SQLite connection string for the local sign-in accounts database (ASP.NET Core Identity).</summary>
+    public string IdentityConnectionString
+    {
+        get
+        {
+            var directory = string.IsNullOrWhiteSpace(CommonFolderPath)
+                ? Path.Combine(AppContext.BaseDirectory, "App_Data")
+                : Path.Combine(CommonFolderPath, "App_Data");
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+            return $"Data Source={Path.Combine(directory, "identity.db")}";
+        }
+    }
+
     public string OneDriveLocation { get; set; } = string.Empty;
 
     /// <summary>
@@ -48,6 +62,13 @@ public class AppSettings
     public string ReportAndDataFolder { get; set; } = string.Empty;
     public string MetricsFolder { get; set; } = string.Empty;
     public string SprintMetricsReportTemplatePath { get; set; }= string.Empty;
+
+    /// <summary>Same relative/absolute resolution as <see cref="ResolvedOneDriveLocation"/>, for the
+    /// PPTX template when it's bundled into the deployment instead of read from a fixed disk path.</summary>
+    public string ResolvedSprintMetricsReportTemplatePath =>
+        string.IsNullOrWhiteSpace(SprintMetricsReportTemplatePath) || Path.IsPathRooted(SprintMetricsReportTemplatePath)
+            ? SprintMetricsReportTemplatePath
+            : Path.Combine(AppContext.BaseDirectory, SprintMetricsReportTemplatePath);
     public string WorkerSummaryFilePath { get; set; } = string.Empty;
     public string SprintDashboardHtmlPath { get; set; } = string.Empty;
     public string SprintReportStatusJsonPath { get; set; } = string.Empty;
@@ -65,4 +86,28 @@ public class AppSettings
     public int BriefingMaxWebSearches { get; set; } = 8;
     public int BriefingMaxTokens { get; set; } = 8000;
     public string BriefingArchiveFolder { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Resolves <see cref="BriefingArchiveFolder"/> the same way as <see cref="TempPath"/>/<see cref="LogFilesPath"/>:
+    /// an absolute path is used as-is; a relative or empty value falls back to a folder under
+    /// CommonFolderPath (or the app's own base directory if that's blank too). Without this, a
+    /// relative value would resolve against the process's working directory, which isn't
+    /// guaranteed to be the app's own folder on every host.
+    /// </summary>
+    public string ResolvedBriefingArchiveFolder
+    {
+        get
+        {
+            var directory = string.IsNullOrWhiteSpace(BriefingArchiveFolder)
+                ? (string.IsNullOrWhiteSpace(CommonFolderPath)
+                    ? Path.Combine(AppContext.BaseDirectory, "BriefingArchive")
+                    : Path.Combine(CommonFolderPath, "BriefingArchive"))
+                : (Path.IsPathRooted(BriefingArchiveFolder)
+                    ? BriefingArchiveFolder
+                    : Path.Combine(string.IsNullOrWhiteSpace(CommonFolderPath) ? AppContext.BaseDirectory : CommonFolderPath, BriefingArchiveFolder));
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
+            return directory;
+        }
+    }
 }

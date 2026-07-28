@@ -2,9 +2,14 @@ using GenerateDeliveryReports.Components;
 using GenerateDeliveryReports.Data.Concrete;
 using GenerateDeliveryReports.Data.Interface;
 using GenerateDeliveryReports.Data.Services;
+using GenerateDeliveryReports.Identity;
 using GenerateDeliveryReports.Models;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
@@ -58,11 +63,22 @@ builder.Services.AddHttpClient<ClaudeApiClient>();
 builder.Services.AddSingleton<BriefingCache>();
 builder.Services.AddScoped<BriefingGenerator>();
 
-// Entra ID (Microsoft identity platform) authentication
+// Entra ID (Microsoft identity platform) authentication -- kept registered for whenever it's
+// usable again, but no longer owns the default scheme or the login requirement (see local
+// Identity below): the org's tenant-restriction policy blocks sign-in via a personal/external
+// tenant, so Entra can't be the enforced mechanism right now.
 if (azureAdConfigured)
 {
     builder.Services.AddAuthentication(OpenIdConnectDefaults.AuthenticationScheme)
         .AddMicrosoftIdentityWebApp(builder.Configuration.GetSection("AzureAd"));
+
+    // The Identity UI login page lists external providers using the scheme's display name --
+    // rename it from the default "OpenIdConnect" to something a user actually recognizes.
+    builder.Services.Configure<AuthenticationOptions>(options =>
+    {
+        if (options.SchemeMap.TryGetValue(OpenIdConnectDefaults.AuthenticationScheme, out var schemeBuilder))
+            schemeBuilder.DisplayName = "Login with SSO (Entra)";
+    });
 
     // Force an explicit account picker on every sign-in. Without this, Windows/Edge's account
     // broker (WAM) can silently substitute a different cached Microsoft account than the one
@@ -74,16 +90,34 @@ if (azureAdConfigured)
 
     builder.Services.AddControllersWithViews()
         .AddMicrosoftIdentityUI();
+}
 
-    builder.Services.AddAuthorization(options =>
-    {
-        options.FallbackPolicy = options.DefaultPolicy; // require an authenticated user everywhere by default
-    });
-}
-else
+// Local sign-in (ASP.NET Core Identity, SQLite-backed) -- this is the enforced auth mechanism.
+// Registered unconditionally: unlike Entra it needs no external tenant, so it's always available.
+builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
-    builder.Services.AddAuthorization();
-}
+    var settings = sp.GetRequiredService<IOptions<AppSettings>>().Value;
+    options.UseSqlite(settings.IdentityConnectionString);
+});
+
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false; // no email service wired up for confirmation links
+})
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Services.AddRazorPages();
+
+// Scoped, not Singleton -- it depends on UserManager, which is itself Scoped (avoids capturing
+// a scoped DbContext-backed dependency inside a singleton).
+builder.Services.AddScoped<IAuthorizationHandler, ExternalLoginAuthorizationHandler>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = options.DefaultPolicy; // require an authenticated user everywhere by default
+    options.AddPolicy("RequireExternalLogin", policy => policy.Requirements.Add(new ExternalLoginRequirement()));
+});
 
 builder.Services.AddCascadingAuthenticationState();
 
@@ -100,13 +134,16 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 
 // HTTP only -- no HTTPS redirect
 
-if (azureAdConfigured)
-{
-    app.UseAuthentication();
-}
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
+
+// Ensure the local sign-in database and its schema exist (SQLite, file created on first run).
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.EnsureCreated();
+}
 
 // Serve dynamically generated files (chart images, PDFs) from wwwroot/downloads
 var downloadsPath = app.Services.GetRequiredService<IOptions<AppSettings>>().Value.TempPath;
@@ -117,9 +154,14 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/downloads"
 });
 
-app.MapStaticAssets();
+// AllowAnonymous is required here: the global FallbackPolicy requires authentication on every
+// endpoint by default, which would otherwise block the CSS/JS the Login page itself needs to
+// render (a chicken-and-egg problem -- you need those assets to be able to log in at all).
+app.MapStaticAssets().AllowAnonymous();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapRazorPages(); // Identity UI's Login/Register/Logout/Manage pages under /Identity/Account/...
 
 if (azureAdConfigured)
 {

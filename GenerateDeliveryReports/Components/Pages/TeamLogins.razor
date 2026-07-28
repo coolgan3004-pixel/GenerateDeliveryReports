@@ -1,0 +1,225 @@
+@page "/admin/team-logins"
+@attribute [Authorize(Policy = "RequireExternalLogin")]
+@rendermode InteractiveServer
+@using System.Security.Cryptography
+@using GenerateDeliveryReports.Identity
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> UserManager
+@inject ILogger<TeamLogins> Logger
+
+<PageTitle>Team Logins</PageTitle>
+
+<div class="container-fluid" style="max-width:760px">
+    <h3 class="mb-3">Create Team Login</h3>
+    <p class="text-muted small">
+        Creates a local sign-in for a team member. They'll need to set up an authenticator app
+        (TOTP) with the key below before they can use the app — hand over the username, password,
+        and authenticator key together through a secure channel.
+    </p>
+    <p class="text-muted small">
+        The login page's Email field requires an email-shaped value to accept input at all, so
+        usernames are generated as <code>firstname.lastname@teamlogin.local</code> — it isn't a
+        real mailbox, just the sign-in identifier.
+    </p>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">First Name</label>
+                    <input class="form-control" @bind="_firstName" @bind:event="oninput" disabled="@_creating" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label small fw-semibold">Last Name</label>
+                    <input class="form-control" @bind="_lastName" @bind:event="oninput" disabled="@_creating" />
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger py-2 px-3 small">@_errorMessage</div>
+            }
+
+            <button class="btn btn-primary" @onclick="CreateLogin" disabled="@(_creating || string.IsNullOrWhiteSpace(_firstName) || string.IsNullOrWhiteSpace(_lastName))">
+                @if (_creating)
+                {
+                    <span class="spinner-border spinner-border-sm me-1"></span>
+                }
+                Create Login
+            </button>
+        </div>
+    </div>
+
+    @if (_result != null)
+    {
+        <div class="card mb-4 border-success">
+            <div class="card-header bg-success-subtle fw-semibold">Login created — copy these now, the password won't be shown again</div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-3">Username</dt>
+                    <dd class="col-sm-9"><code>@_result.Username</code></dd>
+
+                    <dt class="col-sm-3">Password</dt>
+                    <dd class="col-sm-9"><code>@_result.Password</code></dd>
+
+                    <dt class="col-sm-3">Authenticator key</dt>
+                    <dd class="col-sm-9">
+                        <code>@_result.FormattedAuthenticatorKey</code>
+                        <div class="text-muted mt-1">
+                            Manual entry key for any TOTP authenticator app (Microsoft/Google Authenticator, etc.) —
+                            add account, choose "enter a setup key" instead of scanning a QR code.
+                        </div>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    }
+
+    <h5 class="mb-2">Existing Local Accounts</h5>
+    @if (_localAccounts.Count == 0)
+    {
+        <p class="text-muted small">No local accounts yet.</p>
+    }
+    else
+    {
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Authenticator enabled</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var account in _localAccounts)
+                {
+                    <tr>
+                        <td>@account.UserName</td>
+                        <td>@(account.TwoFactorEnabled ? "Yes" : "Not yet")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private sealed record CreatedLogin(string Username, string Password, string FormattedAuthenticatorKey);
+
+    private string _firstName = string.Empty;
+    private string _lastName = string.Empty;
+    private bool _creating;
+    private string? _errorMessage;
+    private CreatedLogin? _result;
+    private List<ApplicationUser> _localAccounts = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshLocalAccountsAsync();
+    }
+
+    private async Task RefreshLocalAccountsAsync()
+    {
+        var accounts = new List<ApplicationUser>();
+        foreach (var user in UserManager.Users.ToList())
+        {
+            var logins = await UserManager.GetLoginsAsync(user);
+            if (logins.Count == 0) // local (non-Entra) accounts only
+                accounts.Add(user);
+        }
+        _localAccounts = accounts;
+    }
+
+    private async Task CreateLogin()
+    {
+        _creating = true;
+        _errorMessage = null;
+        _result = null;
+        StateHasChanged();
+
+        try
+        {
+            var username = await GenerateUsernameAsync(_firstName.Trim(), _lastName.Trim());
+            var password = GenerateStrongPassword();
+
+            var user = new ApplicationUser { UserName = username, Email = username, EmailConfirmed = true };
+            var createResult = await UserManager.CreateAsync(user, password);
+            if (!createResult.Succeeded)
+            {
+                _errorMessage = string.Join(" ", createResult.Errors.Select(e => e.Description));
+                return;
+            }
+
+            // Generate (but don't yet enable) a TOTP key -- the user must confirm they can produce
+            // a valid code before 2FA is turned on for real; see Manage > Two-factor authentication.
+            await UserManager.ResetAuthenticatorKeyAsync(user);
+            var rawKey = await UserManager.GetAuthenticatorKeyAsync(user);
+
+            _result = new CreatedLogin(username, password, FormatKey(rawKey ?? string.Empty));
+            _firstName = string.Empty;
+            _lastName = string.Empty;
+
+            await RefreshLocalAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "TeamLogins - Failed to create login for {First} {Last}", _firstName, _lastName);
+            _errorMessage = $"Could not create the login: {ex.Message}";
+        }
+        finally
+        {
+            _creating = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<string> GenerateUsernameAsync(string firstName, string lastName)
+    {
+        // The stock Login page's Email input requires email-shaped text client-side, so the
+        // sign-in identifier needs an "@..." suffix even though it isn't a real mailbox.
+        const string domain = "@teamlogin.local";
+        var baseUsername = $"{firstName}.{lastName}";
+        var candidate = baseUsername + domain;
+        var suffix = 1;
+        while (await UserManager.FindByNameAsync(candidate) != null)
+        {
+            suffix++;
+            candidate = $"{baseUsername}{suffix}{domain}";
+        }
+        return candidate;
+    }
+
+    private static string FormatKey(string key)
+    {
+        var chunks = Enumerable.Range(0, (key.Length + 3) / 4)
+            .Select(i => key.Substring(i * 4, Math.Min(4, key.Length - i * 4)));
+        return string.Join(" ", chunks);
+    }
+
+    private static string GenerateStrongPassword(int length = 16)
+    {
+        const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I/O -- avoids visual ambiguity
+        const string lower = "abcdefghijkmnpqrstuvwxyz";
+        const string digits = "23456789";
+        const string special = "!@#$%^&*-_=+";
+        const string all = upper + lower + digits + special;
+
+        var chars = new char[length];
+        for (var i = 0; i < length; i++)
+            chars[i] = all[RandomNumberGenerator.GetInt32(all.Length)];
+
+        // Guarantee at least one character from each required category
+        chars[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
+        chars[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
+        chars[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
+        chars[3] = special[RandomNumberGenerator.GetInt32(special.Length)];
+
+        // Shuffle so the guaranteed characters aren't always in the first four positions
+        for (var i = chars.Length - 1; i > 0; i--)
+        {
+            var j = RandomNumberGenerator.GetInt32(i + 1);
+            (chars[i], chars[j]) = (chars[j], chars[i]);
+        }
+
+        return new string(chars);
+    }
+}
