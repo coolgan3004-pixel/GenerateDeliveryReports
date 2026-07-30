@@ -4,13 +4,28 @@ public class AppSettings
 {
     public string CommonFolderPath { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Base directory for files the app WRITES at runtime (logs, the SQLite identity DB,
+    /// generated downloads, the briefing archive) when <see cref="CommonFolderPath"/> isn't set.
+    /// Azure App Service's "Run From Package" zip deploy mounts the app's own folder
+    /// (AppContext.BaseDirectory / wwwroot) READ-ONLY, so writing there throws -- confusingly,
+    /// as a FileNotFoundException from Directory.CreateDirectory rather than an access-denied
+    /// error. Azure always sets a HOME environment variable pointing at persistent, writable
+    /// storage outside wwwroot (normally D:\home); local/on-prem runs never have HOME set, so
+    /// checking for it here only changes behavior on Azure.
+    /// </summary>
+    private static string WritableBase =>
+        Environment.GetEnvironmentVariable("HOME") is { Length: > 0 } home
+            ? Path.Combine(home, "data", "GenerateDeliveryReports")
+            : AppContext.BaseDirectory;
+
     /// <summary>Folder where generated PDFs and charts are written and served from /downloads.</summary>
     public string TempPath
     {
         get
         {
             var directory = string.IsNullOrWhiteSpace(CommonFolderPath)
-                ? Path.Combine(AppContext.BaseDirectory, "wwwroot", "downloads")
+                ? Path.Combine(WritableBase, "wwwroot", "downloads")
                 : Path.Combine(CommonFolderPath, "downloads");
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -24,7 +39,7 @@ public class AppSettings
         get
         {
             var directory = string.IsNullOrWhiteSpace(CommonFolderPath)
-                ? Path.Combine(AppContext.BaseDirectory, "LogFiles")
+                ? Path.Combine(WritableBase, "LogFiles")
                 : Path.Combine(CommonFolderPath, "LogFiles");
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -38,7 +53,7 @@ public class AppSettings
         get
         {
             var directory = string.IsNullOrWhiteSpace(CommonFolderPath)
-                ? Path.Combine(AppContext.BaseDirectory, "App_Data")
+                ? Path.Combine(WritableBase, "App_Data")
                 : Path.Combine(CommonFolderPath, "App_Data");
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
@@ -53,7 +68,9 @@ public class AppSettings
     /// absolute (or UNC) path to a real OneDrive sync folder, so it's used as-is. On Azure App
     /// Service, there is no OneDrive sync -- the xlsx files are bundled into the deployment
     /// instead, so the config value is a relative path (e.g. "CommonFiles\Files"), resolved here
-    /// against the app's own base directory.
+    /// against the app's own base directory. This is READ-only access to the bundled files, so
+    /// AppContext.BaseDirectory (wwwroot) is correct here even under Run From Package -- unlike
+    /// the write paths above, reading from a read-only-mounted wwwroot works fine.
     /// </summary>
     public string ResolvedOneDriveLocation =>
         string.IsNullOrWhiteSpace(OneDriveLocation) || Path.IsPathRooted(OneDriveLocation)
@@ -90,9 +107,7 @@ public class AppSettings
     /// <summary>
     /// Resolves <see cref="BriefingArchiveFolder"/> the same way as <see cref="TempPath"/>/<see cref="LogFilesPath"/>:
     /// an absolute path is used as-is; a relative or empty value falls back to a folder under
-    /// CommonFolderPath (or the app's own base directory if that's blank too). Without this, a
-    /// relative value would resolve against the process's working directory, which isn't
-    /// guaranteed to be the app's own folder on every host.
+    /// CommonFolderPath (or WritableBase if that's blank too).
     /// </summary>
     public string ResolvedBriefingArchiveFolder
     {
@@ -100,11 +115,11 @@ public class AppSettings
         {
             var directory = string.IsNullOrWhiteSpace(BriefingArchiveFolder)
                 ? (string.IsNullOrWhiteSpace(CommonFolderPath)
-                    ? Path.Combine(AppContext.BaseDirectory, "BriefingArchive")
+                    ? Path.Combine(WritableBase, "BriefingArchive")
                     : Path.Combine(CommonFolderPath, "BriefingArchive"))
                 : (Path.IsPathRooted(BriefingArchiveFolder)
                     ? BriefingArchiveFolder
-                    : Path.Combine(string.IsNullOrWhiteSpace(CommonFolderPath) ? AppContext.BaseDirectory : CommonFolderPath, BriefingArchiveFolder));
+                    : Path.Combine(string.IsNullOrWhiteSpace(CommonFolderPath) ? WritableBase : CommonFolderPath, BriefingArchiveFolder));
             if (!Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
             return directory;
