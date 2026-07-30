@@ -87,7 +87,9 @@ public class ExternalLoginModel : PageModel
         if (signInResult.Succeeded)
         {
             _logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity?.Name, info.LoginProvider);
-            return LocalRedirect(returnUrl);
+            // Full page load (Redirect, not LocalRedirect) to restart the Blazor circuit and refresh
+            // its Task<AuthenticationState>. See TryProvisionAndSignInAsync for detailed explanation.
+            return Redirect(returnUrl);
         }
         if (signInResult.IsLockedOut)
         {
@@ -167,6 +169,11 @@ public class ExternalLoginModel : PageModel
 
         await _signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
         _logger.LogInformation("Auto-provisioned/linked {Email} via {LoginProvider}.", email, info.LoginProvider);
-        return LocalRedirect(returnUrl);
+        // Redirect must be a full page load (not LocalRedirect) to restart the Blazor circuit and
+        // refresh its Task<AuthenticationState>. LocalRedirect stays on the same circuit, which was
+        // initialized before the sign-in and still sees the user as unauthenticated -- the cookies
+        // are set correctly, but <AuthorizeView> components (like NavMenu's logout button) won't see
+        // the change until the circuit restarts.
+        return Redirect(returnUrl);
     }
 }
