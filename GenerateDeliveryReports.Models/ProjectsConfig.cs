@@ -88,9 +88,16 @@ public class AppSettings
             : Path.Combine(AppContext.BaseDirectory, SprintMetricsReportTemplatePath);
     public string WorkerSummaryFilePath { get; set; } = string.Empty;
     public string SprintDashboardHtmlPath { get; set; } = string.Empty;
+
+    /// <summary>Same relative/absolute resolution as <see cref="ResolvedBriefingArchiveFolder"/>, but for
+    /// the dashboard's output HTML file itself: an absolute path is used as-is; a relative one resolves
+    /// against WritableBase so the app can both read AND write it on Azure App Service (unlike
+    /// <see cref="ResolvedOneDriveLocation"/>, which only ever needs to be read).</summary>
+    public string ResolvedSprintDashboardHtmlPath =>
+        string.IsNullOrWhiteSpace(SprintDashboardHtmlPath) || Path.IsPathRooted(SprintDashboardHtmlPath)
+            ? SprintDashboardHtmlPath
+            : Path.Combine(WritableBase, SprintDashboardHtmlPath);
     public string SprintReportStatusJsonPath { get; set; } = string.Empty;
-    public string SprintDashboardScriptPath { get; set; } = string.Empty;
-    public string PythonExePath { get; set; } = "python";
     public List<Project> Projects { get; set; } = [];
     public CsatConfig CSAT { get; set; } = new();
     public EmailSetting EmailSettings { get; set; } = new();

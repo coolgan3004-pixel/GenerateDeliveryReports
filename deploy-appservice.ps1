@@ -29,8 +29,9 @@
 #   - The data files must live INSIDE the published app folder for that relative
 #     resolution to find them -- deploy.ps1 puts CommonFiles next to Web\, this
 #     script puts it inside the package itself.
-#   - No Python on App Service, so the Sprint Dashboard script path is cleared;
-#     that feature already degrades gracefully when unconfigured.
+#   - The Sprint Dashboard is generated natively in C# (no Python involved), so its output path
+#     is set to a relative value here too, resolved against writable storage at runtime -- same
+#     idea as BriefingArchiveFolder below.
 #   - Self-contained win-x86 by default (matches Free tier's forced 32-bit worker
 #     process), vs. deploy.ps1's self-contained win-x64 for the on-prem target.
 #
@@ -185,10 +186,9 @@ $content = $content -replace '(?<="OneDriveLocation"\s*:\s*")[^"]*(?=")',       
 $content = $content -replace '(?<="SprintMetricsReportTemplatePath"\s*:\s*")[^"]*(?=")', "CommonFiles\\Templates\\$($templateFile.Name)"
 $content = $content -replace '(?<="CommonFolderPath"\s*:\s*")[^"]*(?=")',                ''
 $content = $content -replace '(?<="BriefingArchiveFolder"\s*:\s*")[^"]*(?=")',           'BriefingArchive'
-# Python isn't available on App Service -- these already degrade gracefully when blank.
+$content = $content -replace '(?<="SprintDashboardHtmlPath"\s*:\s*")[^"]*(?=")',         'SprintDashboard\\Daily_Status_Brief.html'
+# No worker-summary generator is wired up yet -- this already degrades gracefully when blank.
 $content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")',           ''
-$content = $content -replace '(?<="SprintDashboardHtmlPath"\s*:\s*")[^"]*(?=")',         ''
-$content = $content -replace '(?<="SprintDashboardScriptPath"\s*:\s*")[^"]*(?=")',       ''
 
 [System.IO.File]::WriteAllText($AppSettingsPath, $content, [System.Text.Encoding]::UTF8)
 

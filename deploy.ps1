@@ -11,8 +11,7 @@
 #   3. Copy the PPTX report template into the publish output
 #   4. Assemble CommonFiles (xlsx data files + PPTX template)
 #   5. Patch appsettings.json with target-machine paths
-#   6. Stage the GenerateSprintDashboard folder into the package
-#   7. Robocopy the entire package to TargetPath
+#   6. Robocopy the entire package to TargetPath
 #
 # Output: a ready-to-copy package under .\package\
 #   package\
@@ -20,7 +19,10 @@
 #     CommonFiles\
 #       Templates\             <- PPTX report template
 #       Files\                 <- xlsx data files mirrored from OneDrive
-#     GenerateSprintDashboard\ <- Python sprint dashboard script + template
+#
+# The Sprint Dashboard (Daily Sprint Status Brief) is generated natively by the app itself
+# (GenerateDeliveryReports.Data.Services.SprintBriefGenerator) -- no Python involved, so nothing
+# from GenerateSprintDashboard\ needs to be staged into the deployed package.
 #
 # TargetPath is required so appsettings.json paths are baked in correctly
 # for the machine the package will be deployed to.
@@ -44,8 +46,6 @@ $TemplateSrc         = Join-Path $PSScriptRoot "GenerateDeliveryReports.Data\Tem
 $PackageDir          = Join-Path $PSScriptRoot "package"
 $PackageWeb          = Join-Path $PSScriptRoot "package\Web"
 $PackageCommon       = Join-Path $PSScriptRoot "package\CommonFiles"
-$SprintDashboardSrc  = Join-Path $PSScriptRoot "GenerateSprintDashboard"
-$PackageSprintDash   = Join-Path $PSScriptRoot "package\GenerateSprintDashboard"
 
 # Locate dotnet.exe
 $dotnetCmd = Get-Command dotnet -ErrorAction SilentlyContinue
@@ -215,16 +215,15 @@ $content = Get-Content $AppSettingsPath -Raw
 $targetOneDrive        = (Join-Path $TargetPath "CommonFiles\Files")   -replace '\\', '\\'
 $targetCommon          = (Join-Path $TargetPath "CommonFiles")           -replace '\\', '\\'
 $targetTemplate        = (Join-Path $TargetPath "CommonFiles\Templates\GlobalPayments-DeliveryQualitySummaryReport_Template.pptx") -replace '\\', '\\'
-$targetDashboardHtml   = (Join-Path $TargetPath "GenerateSprintDashboard\sprint_dashboard.html") -replace '\\', '\\'
-$targetDashboardScript = (Join-Path $TargetPath "GenerateSprintDashboard\daily_brief.py")   -replace '\\', '\\'
+$targetDashboardHtml   = (Join-Path $TargetPath "SprintDashboard\Daily_Status_Brief.html") -replace '\\', '\\'
 
 $content = $content -replace '(?<="OneDriveLocation"\s*:\s*")[^"]*(?=")',                $targetOneDrive
 $content = $content -replace '(?<="CommonFolderPath"\s*:\s*")[^"]*(?=")',                $targetCommon
 $content = $content -replace '(?<="SprintMetricsReportTemplatePath"\s*:\s*")[^"]*(?=")', $targetTemplate
 # Clear the hardcoded dev-machine path so the app uses its built-in fallback (wwwroot/worker-summary.html)
 $content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")',           ''
+# SprintBriefGenerator creates this file (and its directory) itself at generation time.
 $content = $content -replace '(?<="SprintDashboardHtmlPath"\s*:\s*")[^"]*(?=")',         $targetDashboardHtml
-$content = $content -replace '(?<="SprintDashboardScriptPath"\s*:\s*")[^"]*(?=")',       $targetDashboardScript
 
 [System.IO.File]::WriteAllText($AppSettingsPath, $content, [System.Text.Encoding]::UTF8)
 
@@ -244,18 +243,8 @@ New-Item -ItemType Directory -Path $PackageWeb -Force | Out-Null
 Copy-Item -Path (Join-Path $PublishDir "*") -Destination $PackageWeb -Recurse -Force
 Write-Host "Published app staged to package\Web\" -ForegroundColor Green
 
-# Step 6: Stage GenerateSprintDashboard folder into the package
-Write-Host "`n[6/7] Staging GenerateSprintDashboard..." -ForegroundColor Yellow
-if (Test-Path $SprintDashboardSrc) {
-    New-Item -ItemType Directory -Path $PackageSprintDash -Force | Out-Null
-    Copy-Item -Path (Join-Path $SprintDashboardSrc "*") -Destination $PackageSprintDash -Recurse -Force
-    Write-Host "GenerateSprintDashboard staged to package\GenerateSprintDashboard\" -ForegroundColor Green
-} else {
-    Write-Host "WARNING: GenerateSprintDashboard source not found at $SprintDashboardSrc -- skipping." -ForegroundColor Yellow
-}
-
-# Step 7: Copy package to target
-Write-Host "`n[7/7] Deploying package to $TargetPath ..." -ForegroundColor Yellow
+# Step 6: Copy package to target
+Write-Host "`n[6/6] Deploying package to $TargetPath ..." -ForegroundColor Yellow
 if (-not (Test-Path $TargetPath)) {
     New-Item -ItemType Directory -Path $TargetPath -Force | Out-Null
 }
@@ -281,14 +270,13 @@ Write-Host "    Web\                          <- web application (appsettings.js
 Write-Host "    CommonFiles\" -ForegroundColor White
 Write-Host "      Templates\                  <- PPTX report template" -ForegroundColor White
 Write-Host "      Files\                      <- xlsx data files ($xlsxCount file(s) from OneDrive)" -ForegroundColor White
-Write-Host "    GenerateSprintDashboard\      <- sprint dashboard script + template" -ForegroundColor White
 Write-Host ""
 Write-Host "Paths baked into appsettings.json target: $TargetPath" -ForegroundColor Gray
 Write-Host ""
 
 # Show actual file counts per package subfolder
 Write-Host "Package contents:" -ForegroundColor Yellow
-$subFolders = @("Web", "CommonFiles\Files", "CommonFiles\Templates", "GenerateSprintDashboard")
+$subFolders = @("Web", "CommonFiles\Files", "CommonFiles\Templates")
 foreach ($sub in $subFolders) {
     $subPath = Join-Path $PackageDir $sub
     if (Test-Path $subPath) {

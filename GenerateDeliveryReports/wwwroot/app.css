@@ -132,3 +132,101 @@ h1:focus {
 .briefing-content p {
     margin-bottom: .75rem;
 }
+
+/* Identity UI pages (Login, Register, Manage, ...) are a compiled Razor Class Library --
+   there's no editable .cshtml to restyle directly, so this reaches in via CSS instead.
+   The generic "About" link (-> learn.microsoft.com) is template boilerplate, irrelevant on
+   every one of these pages. */
+.navbar a[href*="learn.microsoft.com"] {
+    display: none;
+}
+
+/* Login page only, scoped via :has(#account) -- that form id is unique to Login.cshtml, so
+   this doesn't affect Register/Manage/other Identity pages sharing the same base layout.
+   ">" matters here: the layout has three ".container" divs (nav, main, footer) -- only the
+   one wrapping <main> is a direct child of <body>, so this doesn't also squish the navbar. */
+body:has(#account) > .container {
+    max-width: 440px;
+    margin-top: 4rem;
+}
+
+body:has(#account) h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+body:has(#account) .row {
+    display: block;
+}
+
+body:has(#account) .col-lg-6,
+body:has(#account) .col-lg-4 {
+    width: 100%;
+    max-width: 100%;
+    flex: none;
+    padding: 0;
+}
+
+body:has(#account) section {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1.75rem;
+}
+
+body:has(#account) .col-lg-4 section {
+    margin-top: 1rem;
+    padding: 1.25rem 1.75rem 1.75rem;
+}
+
+/* Redundant once the card gives the section its own boundary */
+body:has(#account) h2,
+body:has(#account) section hr {
+    display: none;
+}
+
+/* "Use another service to log in." becomes a plain "or" divider */
+body:has(#account) h3 {
+    text-align: center;
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #adb5bd;
+    margin: 0;
+}
+
+body:has(#account) h3::before,
+body:has(#account) h3::after {
+    content: "";
+    display: inline-block;
+    width: 28%;
+    height: 1px;
+    background: #dee2e6;
+    vertical-align: middle;
+    margin: 0 .6rem;
+}
+
+/* Dead links: no email sender is configured, so Forgot password / Resend confirmation are
+   non-functional. Register is now locked server-side (see Program.cs) -- hidden here too so
+   it doesn't dangle as a link that just leads to an access-denied page. */
+body:has(#account) p:has(> #forgot-password),
+body:has(#account) p:has(> a[href*="/Account/Register"]),
+body:has(#account) p:has(> #resend-confirmation) {
+    display: none;
+}
+
+body:has(#account) #login-submit {
+    margin-top: .5rem;
+}
+
+body:has(#account) #external-account button {
+    width: 100%;
+    background: transparent;
+    color: #495057;
+    border: 1px solid #ced4da;
+}
+
+body:has(#account) #external-account button:hover {
+    background: #f8f9fa;
+}

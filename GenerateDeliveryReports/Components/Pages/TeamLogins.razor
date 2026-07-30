@@ -4,6 +4,7 @@
 @using System.Security.Cryptography
 @using GenerateDeliveryReports.Identity
 @using Microsoft.AspNetCore.Identity
+@using QRCoder
 @inject UserManager<ApplicationUser> UserManager
 @inject ILogger<TeamLogins> Logger
 
@@ -62,12 +63,16 @@
                     <dt class="col-sm-3">Password</dt>
                     <dd class="col-sm-9"><code>@_result.Password</code></dd>
 
-                    <dt class="col-sm-3">Authenticator key</dt>
+                    <dt class="col-sm-3">Authenticator</dt>
                     <dd class="col-sm-9">
-                        <code>@_result.FormattedAuthenticatorKey</code>
+                        <img src="@_result.QrCodeDataUri" alt="Authenticator QR code" width="180" height="180"
+                             style="border:1px solid #dee2e6; border-radius:6px; padding:6px;" />
+                        <div class="mt-2">
+                            <code>@_result.FormattedAuthenticatorKey</code>
+                        </div>
                         <div class="text-muted mt-1">
-                            Manual entry key for any TOTP authenticator app (Microsoft/Google Authenticator, etc.) —
-                            add account, choose "enter a setup key" instead of scanning a QR code.
+                            Scan the QR code with an authenticator app (Microsoft/Google Authenticator, etc.), or use
+                            the key above to enter it manually — same secret either way.
                         </div>
                     </dd>
                 </dl>
@@ -103,7 +108,9 @@
 </div>
 
 @code {
-    private sealed record CreatedLogin(string Username, string Password, string FormattedAuthenticatorKey);
+    private sealed record CreatedLogin(string Username, string Password, string FormattedAuthenticatorKey, string QrCodeDataUri);
+
+    private const string Issuer = "GenerateDeliveryReports";
 
     private string _firstName = string.Empty;
     private string _lastName = string.Empty;
@@ -152,9 +159,9 @@
             // Generate (but don't yet enable) a TOTP key -- the user must confirm they can produce
             // a valid code before 2FA is turned on for real; see Manage > Two-factor authentication.
             await UserManager.ResetAuthenticatorKeyAsync(user);
-            var rawKey = await UserManager.GetAuthenticatorKeyAsync(user);
+            var rawKey = await UserManager.GetAuthenticatorKeyAsync(user) ?? string.Empty;
 
-            _result = new CreatedLogin(username, password, FormatKey(rawKey ?? string.Empty));
+            _result = new CreatedLogin(username, password, FormatKey(rawKey), BuildQrCodeDataUri(username, rawKey));
             _firstName = string.Empty;
             _lastName = string.Empty;
 
@@ -193,6 +200,22 @@
         var chunks = Enumerable.Range(0, (key.Length + 3) / 4)
             .Select(i => key.Substring(i * 4, Math.Min(4, key.Length - i * 4)));
         return string.Join(" ", chunks);
+    }
+
+    /// <summary>
+    /// Renders the standard otpauth:// TOTP key URI as a QR code entirely server-side (QRCoder,
+    /// pure managed code) -- the secret never leaves the app, unlike calling out to a third-party
+    /// QR generation API, which would hand the TOTP secret to an external service.
+    /// </summary>
+    private static string BuildQrCodeDataUri(string username, string rawKey)
+    {
+        var label = Uri.EscapeDataString($"{Issuer}:{username}");
+        var otpauthUri = $"otpauth://totp/{label}?secret={rawKey}&issuer={Uri.EscapeDataString(Issuer)}&digits=6";
+
+        using var generator = new QRCodeGenerator();
+        using var qrData = generator.CreateQrCode(otpauthUri, QRCodeGenerator.ECCLevel.Q);
+        var pngBytes = new PngByteQRCode(qrData).GetGraphic(8);
+        return $"data:image/png;base64,{Convert.ToBase64String(pngBytes)}";
     }
 
     private static string GenerateStrongPassword(int length = 16)

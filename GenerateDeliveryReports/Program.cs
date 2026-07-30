@@ -137,6 +137,27 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Explicit middleware, not a Razor Pages authorization convention: Identity's own setup marks
+// the whole /Account folder [AllowAnonymous] (it has to -- otherwise nobody could reach Login
+// at all), and a page-level AuthorizeAreaPage convention added on top of that did NOT actually
+// take effect (verified: Register loaded with no authorization check running at all in the
+// logs). This reuses the same RequireExternalLogin policy Team Logins uses, applied directly,
+// so self-registration is genuinely disabled -- accounts are only ever created via that page.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/Identity/Account/Register"))
+    {
+        var authorizationService = context.RequestServices.GetRequiredService<IAuthorizationService>();
+        var result = await authorizationService.AuthorizeAsync(context.User, "RequireExternalLogin");
+        if (!result.Succeeded)
+        {
+            context.Response.Redirect("/Identity/Account/AccessDenied");
+            return;
+        }
+    }
+    await next();
+});
+
 app.UseAntiforgery();
 
 // Ensure the local sign-in database and its schema exist (SQLite, file created on first run).
@@ -183,7 +204,7 @@ app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options) =>
 
 app.MapGet("/api/sprint-dashboard", async (IOptions<AppSettings> options) =>
 {
-    var path = options.Value.SprintDashboardHtmlPath;
+    var path = options.Value.ResolvedSprintDashboardHtmlPath;
     if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
         return Results.NotFound();
 
