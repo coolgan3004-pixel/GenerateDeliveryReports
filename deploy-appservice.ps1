@@ -5,11 +5,17 @@
 #   .\deploy-appservice.ps1
 #   .\deploy-appservice.ps1 -Zip
 #   .\deploy-appservice.ps1 -OutputPath "D:\Packages\GenerateDeliveryReports" -Zip
+#   .\deploy-appservice.ps1 -Runtime win-x64 -Zip   # if you move off Free tier later
 #
 # The script will:
 #   1. Clean previous package output
-#   2. Publish framework-dependent (App Service supplies the .NET runtime --
-#      no need to ship a self-contained win-x64 runtime like the on-prem deploy)
+#   2. Publish self-contained for -Runtime (default win-x86) -- bundles the actual
+#      .NET runtime with the app instead of depending on whatever Azure happens to
+#      have installed for that architecture. Framework-dependent deploys were
+#      failing on Free tier (0x8007023e / ANCM hosting failure): Free tier forces
+#      a 32-bit worker process, and there's no guarantee a matching 32-bit .NET
+#      runtime is provisioned on the platform side. Self-contained removes that
+#      dependency entirely.
 #   3. Bundle xlsx data files, CSAT survey files, and the PPTX template INTO the
 #      package (nested under CommonFiles\, not alongside it -- see below)
 #   4. Patch appsettings.json with relative paths and disable local-only features
@@ -25,8 +31,8 @@
 #     script puts it inside the package itself.
 #   - No Python on App Service, so the Sprint Dashboard script path is cleared;
 #     that feature already degrades gracefully when unconfigured.
-#   - Framework-dependent publish (smaller, matches the platform's .NET stack)
-#     instead of self-contained win-x64.
+#   - Self-contained win-x86 by default (matches Free tier's forced 32-bit worker
+#     process), vs. deploy.ps1's self-contained win-x64 for the on-prem target.
 #
 # This script does NOT deploy anything to Azure -- it only produces the package.
 # It must run on a machine with the real OneDrive-synced files available (reads
@@ -35,6 +41,7 @@
 
 param(
     [string]$Configuration = "Release",
+    [string]$Runtime = "win-x86",
     [string]$OutputPath = "",
     [switch]$Zip
 )
@@ -64,9 +71,10 @@ if (Test-Path $PackageDir) {
     Write-Host "  Removed $PackageDir" -ForegroundColor Gray
 }
 
-# Step 2: Publish framework-dependent
-Write-Host "`n[2/5] Publishing ($Configuration, framework-dependent)..." -ForegroundColor Yellow
-& dotnet publish $ProjectPath -c $Configuration -o $PackageDir
+# Step 2: Publish self-contained for the target runtime (bundles the .NET runtime itself --
+# see the header comment for why framework-dependent doesn't work reliably on Free tier).
+Write-Host "`n[2/5] Publishing ($Configuration, self-contained, $Runtime)..." -ForegroundColor Yellow
+& dotnet publish $ProjectPath -c $Configuration -r $Runtime --self-contained true -o $PackageDir
 if ($LASTEXITCODE -ne 0) {
     Write-Host "ERROR: Publish failed." -ForegroundColor Red
     exit 1
@@ -225,6 +233,9 @@ Write-Host ""
 Write-Host "Package location: $PackageDir" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Still needed before this actually works on App Service (not handled by this script):" -ForegroundColor Yellow
+Write-Host "  - Confirm Configuration -> General settings -> Platform matches -Runtime ($Runtime)" -ForegroundColor White
+Write-Host "    -- win-x86 needs 32 Bit; win-x64 needs 64 Bit. A mismatch here is what caused" -ForegroundColor White
+Write-Host "    the earlier 0x8007023e ANCM startup failure." -ForegroundColor White
 Write-Host "  - Set AzureAd:TenantId / AzureAd:ClientId as App Service Configuration settings" -ForegroundColor White
 Write-Host "    (or leave unset to keep Entra sign-in off, same as locally)" -ForegroundColor White
 Write-Host "  - Set AzureAd__ClientSecret as an App Service Application Setting -- never commit it" -ForegroundColor White
