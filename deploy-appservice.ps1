@@ -55,9 +55,12 @@ Write-Host "==========================================" -ForegroundColor Cyan
 # conflict -- if dotnet publish does hit a real lock, it fails with a clear "file in use" error.
 
 # Step 1: Clean previous package
+# -Confirm:$false on top of -Force: on a non-interactive CI agent, Remove-Item throws instead of
+# prompting if anything (e.g. a leftover read-only/locked file from a prior run at a persistent
+# -OutputPath) would otherwise make it ask "are you sure?".
 Write-Host "`n[1/5] Cleaning previous package..." -ForegroundColor Yellow
 if (Test-Path $PackageDir) {
-    Remove-Item -Recurse -Force $PackageDir
+    Remove-Item -Recurse -Force -Confirm:$false $PackageDir
     Write-Host "  Removed $PackageDir" -ForegroundColor Gray
 }
 
@@ -195,7 +198,19 @@ Write-Host "appsettings.json patched." -ForegroundColor Green
 if ($Zip) {
     Write-Host "`n[5/5] Creating zip package..." -ForegroundColor Yellow
     $zipPath = "$PackageDir.zip"
-    if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+    if (Test-Path $zipPath) {
+        # .NET delete instead of Remove-Item: never prompts, regardless of ambient confirm
+        # preference or file attributes -- Remove-Item can still try to confirm even with
+        # -Force in some cases, which throws instead of prompting on a non-interactive CI agent.
+        try {
+            [System.IO.File]::SetAttributes($zipPath, [System.IO.FileAttributes]::Normal)
+            [System.IO.File]::Delete($zipPath)
+        } catch {
+            Write-Host "ERROR: Could not remove existing zip at $zipPath -- $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "       It may still be open in another process (e.g. a prior deploy step)." -ForegroundColor Red
+            exit 1
+        }
+    }
     Compress-Archive -Path (Join-Path $PackageDir "*") -DestinationPath $zipPath
     Write-Host "Created $zipPath" -ForegroundColor Green
 } else {
