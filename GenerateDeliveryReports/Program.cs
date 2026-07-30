@@ -83,9 +83,22 @@ if (azureAdConfigured)
     // Force an explicit account picker on every sign-in. Without this, Windows/Edge's account
     // broker (WAM) can silently substitute a different cached Microsoft account than the one
     // the user intends, which surfaces as AADSTS50197 ("could not find the user").
+    //
+    // SignInScheme: the "Login with SSO (Entra)" button on the Identity login page is Identity
+    // UI's own external-provider button -- it posts to /Identity/Account/ExternalLogin, whose
+    // callback reads the completed login from the IdentityConstants.ExternalScheme cookie via
+    // SignInManager.GetExternalLoginInfoAsync(). AddMicrosoftIdentityWebApp defaults this scheme's
+    // SignInScheme to its own "Cookies" scheme instead (it's built to be a standalone auth
+    // solution), so that lookup found nothing and failed with "Error loading external login
+    // information." Pointing SignInScheme at ExternalScheme is also required for
+    // ExternalLoginAuthorizationHandler: it checks UserManager.GetLoginsAsync (AspNetUserLogins
+    // rows), which only get populated by Identity's own ExternalLogin flow completing --
+    // bypassing that flow entirely would've broken Team Logins access and Register lockdown for
+    // real Entra sign-ins too.
     builder.Services.Configure<OpenIdConnectOptions>(OpenIdConnectDefaults.AuthenticationScheme, options =>
     {
         options.Prompt = "select_account";
+        options.SignInScheme = IdentityConstants.ExternalScheme;
     });
 
     builder.Services.AddControllersWithViews()
