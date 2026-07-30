@@ -25,7 +25,7 @@ namespace GenerateDeliveryReports.Areas.Identity.Pages.Account;
 /// authorization middleware before OnPost (the Entra challenge) ever ran, producing an infinite
 /// Login&lt;-&gt;ExternalLogin bounce with the returnUrl nesting deeper on every click.
 /// </summary>
-// TEMP-REMOVED-FOR-TEST: [AllowAnonymous]
+[AllowAnonymous]
 public class ExternalLoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
