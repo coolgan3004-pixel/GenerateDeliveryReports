@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GenerateDeliveryReports.Identity;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -15,7 +16,16 @@ namespace GenerateDeliveryReports.Areas.Identity.Pages.Account;
 /// claims. This auto-provisions (or links) the local ApplicationUser from that claim instead, so a
 /// first-time Entra sign-in lands the user straight in the app -- the manual form is kept only as
 /// a fallback for the rare case where no usable email-shaped claim comes back from Entra.
+///
+/// [AllowAnonymous] is required explicitly here: Identity's own convention that exempts the whole
+/// /Account folder from the app's global FallbackPolicy (RequireAuthenticatedUser) is applied to
+/// the Razor Class Library's compiled pages and did not reliably extend to this app-level page
+/// overriding one of them once published -- confirmed live (Azure App Service, published build):
+/// an anonymous POST here was being redirected straight to /Identity/Account/Login by the
+/// authorization middleware before OnPost (the Entra challenge) ever ran, producing an infinite
+/// Login&lt;-&gt;ExternalLogin bounce with the returnUrl nesting deeper on every click.
 /// </summary>
+// TEMP-REMOVED-FOR-TEST: [AllowAnonymous]
 public class ExternalLoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
