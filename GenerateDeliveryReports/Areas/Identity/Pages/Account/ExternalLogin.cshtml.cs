@@ -86,6 +86,13 @@ public class ExternalLoginModel : PageModel
         var signInResult = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
         if (signInResult.Succeeded)
         {
+            var user = await _signInManager.UserManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey);
+            if (user != null && !user.IsActive)
+            {
+                await _signInManager.SignOutAsync();
+                ErrorMessage = "This account has been deactivated.";
+                return RedirectToPage("./Login", new { ReturnUrl = returnUrl });
+            }
             _logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity?.Name, info.LoginProvider);
             // Full page load (Redirect, not LocalRedirect) to restart the Blazor circuit and refresh
             // its Task<AuthenticationState>. See TryProvisionAndSignInAsync for detailed explanation.
@@ -149,7 +156,7 @@ public class ExternalLoginModel : PageModel
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null)
         {
-            user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = true };
+            user = new ApplicationUser { UserName = email, Email = email, EmailConfirmed = true, CreatedUtc = DateTime.UtcNow };
             var createResult = await _userManager.CreateAsync(user);
             if (!createResult.Succeeded)
             {
@@ -164,6 +171,12 @@ public class ExternalLoginModel : PageModel
         {
             _logger.LogWarning("Failed to link {LoginProvider} login to {Email}: {Errors}",
                 info.LoginProvider, email, string.Join(" ", addLoginResult.Errors.Select(e => e.Description)));
+            return null;
+        }
+
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("Attempted sign-in for deactivated account {Email} via {LoginProvider}.", email, info.LoginProvider);
             return null;
         }
 

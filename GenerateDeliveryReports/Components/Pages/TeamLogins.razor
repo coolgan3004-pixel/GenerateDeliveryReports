@@ -87,36 +87,123 @@
     }
     else
     {
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Authenticator enabled</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var account in _localAccounts)
-                {
+        <div style="overflow-x: auto;">
+            <table class="table table-sm">
+                <thead>
                     <tr>
-                        <td>@account.UserName</td>
-                        <td>@(account.TwoFactorEnabled ? "Yes" : "Not yet")</td>
+                        <th>Username</th>
+                        <th>Status</th>
+                        <th>Authenticator</th>
+                        <th>Created</th>
+                        <th>Updated</th>
+                        <th>Deactivated</th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var account in _localAccounts)
+                    {
+                        <tr>
+                            <td>@account.UserName</td>
+                            <td>
+                                <span class="badge @(account.IsActive ? "bg-success" : "bg-secondary")">
+                                    @(account.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td>@(account.TwoFactorEnabled ? "Yes" : "Not yet")</td>
+                            <td><small>@account.CreatedUtc.ToString("yyyy-MM-dd HH:mm")</small></td>
+                            <td><small>@(account.UpdatedUtc?.ToString("yyyy-MM-dd HH:mm") ?? "—")</small></td>
+                            <td><small>@(account.DeactivatedUtc?.ToString("yyyy-MM-dd HH:mm") ?? "—")</small></td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    @if (account.IsActive)
+                                    {
+                                        <button class="btn btn-warning btn-sm" @onclick="() => ShowDeactivateConfirm(account)" title="Deactivate this login">
+                                            Deactivate
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-info btn-sm" @onclick="() => ReactivateLogin(account)" title="Reactivate this login">
+                                            Reactivate
+                                        </button>
+                                    }
+                                    <button class="btn btn-primary btn-sm" @onclick="() => ResetPassword(account)" title="Generate and show new password">
+                                        Reset Password
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" @onclick="() => ShowDeleteConfirm(account)" title="Delete this login permanently">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (_resetPasswordResult != null)
+    {
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info-subtle fw-semibold">Password reset for @_resetPasswordResult.Username</div>
+            <div class="card-body">
+                <dl class="row mb-0 small">
+                    <dt class="col-sm-3">New Password</dt>
+                    <dd class="col-sm-9"><code>@_resetPasswordResult.NewPassword</code></dd>
+                </dl>
+                <p class="text-muted small mt-2">Share this temporary password securely. The user must sign in and change it immediately.</p>
+                <button class="btn btn-sm btn-secondary" @onclick="() => _resetPasswordResult = null">Close</button>
+            </div>
+        </div>
+    }
+
+    @if (_confirmAction != null)
+    {
+        <div class="modal fade show d-block" style="background-color: rgba(0,0,0,.5);">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Action</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p>@_confirmAction.Message</p>
+                        @if (!string.IsNullOrEmpty(_confirmAction.Warning))
+                        {
+                            <div class="alert alert-warning">@_confirmAction.Warning</div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CancelConfirm">Cancel</button>
+                        <button type="button" class="btn @_confirmAction.ButtonClass" @onclick="ConfirmAction" disabled="@_actionInProgress">
+                            @if (_actionInProgress)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            @_confirmAction.ButtonText
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 </div>
 
 @code {
     private sealed record CreatedLogin(string Username, string Password, string FormattedAuthenticatorKey, string QrCodeDataUri);
+    private sealed record ResetPasswordResult(string Username, string NewPassword);
+    private sealed record ConfirmActionInfo(string Message, string Warning, string ButtonText, string ButtonClass, Func<Task> Action);
 
     private const string Issuer = "GenerateDeliveryReports";
 
     private string _firstName = string.Empty;
     private string _lastName = string.Empty;
     private bool _creating;
+    private bool _actionInProgress;
     private string? _errorMessage;
     private CreatedLogin? _result;
+    private ResetPasswordResult? _resetPasswordResult;
+    private ConfirmActionInfo? _confirmAction;
     private List<ApplicationUser> _localAccounts = [];
 
     protected override async Task OnInitializedAsync()
@@ -133,7 +220,7 @@
             if (logins.Count == 0) // local (non-Entra) accounts only
                 accounts.Add(user);
         }
-        _localAccounts = accounts;
+        _localAccounts = accounts.OrderBy(a => a.CreatedUtc).ToList();
     }
 
     private async Task CreateLogin()
@@ -148,7 +235,7 @@
             var username = await GenerateUsernameAsync(_firstName.Trim(), _lastName.Trim());
             var password = GenerateStrongPassword();
 
-            var user = new ApplicationUser { UserName = username, Email = username, EmailConfirmed = true };
+            var user = new ApplicationUser { UserName = username, Email = username, EmailConfirmed = true, CreatedUtc = DateTime.UtcNow };
             var createResult = await UserManager.CreateAsync(user, password);
             if (!createResult.Succeeded)
             {
@@ -244,5 +331,159 @@
         }
 
         return new string(chars);
+    }
+
+    private void ShowDeactivateConfirm(ApplicationUser account)
+    {
+        _confirmAction = new ConfirmActionInfo(
+            Message: $"Deactivate login for {account.UserName}? They will no longer be able to sign in.",
+            Warning: "This action can be reversed by reactivating the account.",
+            ButtonText: "Deactivate",
+            ButtonClass: "btn-warning",
+            Action: () => DeactivateLogin(account)
+        );
+    }
+
+    private void ShowDeleteConfirm(ApplicationUser account)
+    {
+        _confirmAction = new ConfirmActionInfo(
+            Message: $"Permanently delete login for {account.UserName}?",
+            Warning: "This action cannot be undone. All data associated with this account will be deleted.",
+            ButtonText: "Delete Permanently",
+            ButtonClass: "btn-danger",
+            Action: () => DeleteLogin(account)
+        );
+    }
+
+    private void CancelConfirm()
+    {
+        _confirmAction = null;
+    }
+
+    private async Task ConfirmAction()
+    {
+        if (_confirmAction == null) return;
+        _actionInProgress = true;
+        StateHasChanged();
+        try
+        {
+            await _confirmAction.Action();
+        }
+        finally
+        {
+            _actionInProgress = false;
+            _confirmAction = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeactivateLogin(ApplicationUser account)
+    {
+        try
+        {
+            account.IsActive = false;
+            account.DeactivatedUtc = DateTime.UtcNow;
+            account.UpdatedUtc = DateTime.UtcNow;
+            var result = await UserManager.UpdateAsync(account);
+            if (result.Succeeded)
+            {
+                Logger.LogInformation("Deactivated login: {Username}", account.UserName);
+                await RefreshLocalAccountsAsync();
+            }
+            else
+            {
+                _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to deactivate login {Username}", account.UserName);
+            _errorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task ReactivateLogin(ApplicationUser account)
+    {
+        try
+        {
+            account.IsActive = true;
+            account.DeactivatedUtc = null;
+            account.UpdatedUtc = DateTime.UtcNow;
+            var result = await UserManager.UpdateAsync(account);
+            if (result.Succeeded)
+            {
+                Logger.LogInformation("Reactivated login: {Username}", account.UserName);
+                await RefreshLocalAccountsAsync();
+            }
+            else
+            {
+                _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to reactivate login {Username}", account.UserName);
+            _errorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task ResetPassword(ApplicationUser account)
+    {
+        try
+        {
+            var newPassword = GenerateStrongPassword();
+            var result = await UserManager.RemovePasswordAsync(account);
+            if (!result.Succeeded)
+            {
+                _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                return;
+            }
+
+            result = await UserManager.AddPasswordAsync(account, newPassword);
+            if (!result.Succeeded)
+            {
+                _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                return;
+            }
+
+            account.UpdatedUtc = DateTime.UtcNow;
+            result = await UserManager.UpdateAsync(account);
+            if (!result.Succeeded)
+            {
+                _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+                return;
+            }
+
+            Logger.LogInformation("Reset password for: {Username}", account.UserName);
+            _resetPasswordResult = new ResetPasswordResult(account.UserName ?? "Unknown", newPassword);
+            await RefreshLocalAccountsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to reset password for {Username}", account.UserName);
+            _errorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteLogin(ApplicationUser account)
+    {
+        try
+        {
+            var result = await UserManager.DeleteAsync(account);
+            if (result.Succeeded)
+            {
+                Logger.LogInformation("Deleted login: {Username}", account.UserName);
+                await RefreshLocalAccountsAsync();
+            }
+            else
+            {
+                _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to delete login {Username}", account.UserName);
+            _errorMessage = $"Error: {ex.Message}";
+        }
     }
 }
