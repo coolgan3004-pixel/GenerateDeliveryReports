@@ -173,10 +173,11 @@ app.Use(async (context, next) =>
 
 app.UseAntiforgery();
 
-// Ensure the local sign-in database and its schema exist (SQLite, file created on first run).
+// Apply pending migrations to the database (creates schema on first run, applies new migrations on updates).
+// Unlike EnsureCreated(), Migrate() works on existing databases -- it's required for schema changes to take effect.
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.EnsureCreated();
+    scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
 }
 
 // Serve dynamically generated files (chart images, PDFs) from wwwroot/downloads
