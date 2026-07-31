@@ -173,11 +173,12 @@ app.Use(async (context, next) =>
 
 app.UseAntiforgery();
 
-// Apply pending migrations to the database (creates schema on first run, applies new migrations on updates).
-// Unlike EnsureCreated(), Migrate() works on existing databases -- it's required for schema changes to take effect.
+// Initialize the database safely (handles fresh installs and schema updates on existing databases).
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.Migrate();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    DbInitializer.InitializeSafely(db, logger);
 }
 
 // Serve dynamically generated files (chart images, PDFs) from wwwroot/downloads
