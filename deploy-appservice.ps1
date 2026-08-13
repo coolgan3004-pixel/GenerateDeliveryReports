@@ -223,6 +223,26 @@ Write-Host "appsettings.json patched." -ForegroundColor Green
 # Step 5: Optionally zip for az webapp deploy / a GitHub Action
 if ($Zip) {
     Write-Host "`n[5/5] Creating zip package..." -ForegroundColor Yellow
+
+    # Diagnostic: Verify JSON file exists before zipping
+    $jsonPath = Join-Path $PackageDir "CommonFiles\Files\SprintReportsAvailability.json"
+    Write-Host "  [DEBUG] Checking JSON before zip:" -ForegroundColor Gray
+    if (Test-Path $jsonPath) {
+        $jsonFile = Get-Item $jsonPath
+        Write-Host "    ✓ JSON found: $($jsonFile.FullName)" -ForegroundColor Green
+        Write-Host "      Size: $($jsonFile.Length) bytes" -ForegroundColor Gray
+        Write-Host "      Modified: $($jsonFile.LastWriteTime)" -ForegroundColor Gray
+    } else {
+        Write-Host "    ✗ JSON NOT FOUND at: $jsonPath" -ForegroundColor Red
+        Write-Host "    Listing CommonFiles\Files contents:" -ForegroundColor Yellow
+        $filesDir = Join-Path $PackageDir "CommonFiles\Files"
+        if (Test-Path $filesDir) {
+            Get-ChildItem $filesDir -Force | Select-Object Name, Length | ForEach-Object { Write-Host "      - $($_.Name) ($($_.Length) bytes)" -ForegroundColor Gray }
+        } else {
+            Write-Host "      ERROR: CommonFiles\Files directory doesn't exist!" -ForegroundColor Red
+        }
+    }
+
     $zipPath = "$PackageDir.zip"
     if (Test-Path $zipPath) {
         # .NET delete instead of Remove-Item: never prompts, regardless of ambient confirm
@@ -239,6 +259,30 @@ if ($Zip) {
     }
     Compress-Archive -Path (Join-Path $PackageDir "*") -DestinationPath $zipPath
     Write-Host "Created $zipPath" -ForegroundColor Green
+
+    # Diagnostic: Verify JSON is in the zip after creation
+    Write-Host "  [DEBUG] Verifying zip contents:" -ForegroundColor Gray
+    $tempExtract = Join-Path $env:TEMP "zip-verify-$([guid]::NewGuid())"
+    try {
+        Expand-Archive -Path $zipPath -DestinationPath $tempExtract -Force
+        $jsonInZip = Join-Path $tempExtract "CommonFiles\Files\SprintReportsAvailability.json"
+        if (Test-Path $jsonInZip) {
+            $zippedFile = Get-Item $jsonInZip
+            Write-Host "    ✓ JSON confirmed in zip: $zippedFile.Name" -ForegroundColor Green
+            Write-Host "      Size: $($zippedFile.Length) bytes" -ForegroundColor Gray
+        } else {
+            Write-Host "    ✗ JSON NOT in zip!" -ForegroundColor Red
+            Write-Host "    Zip contains at CommonFiles\Files:" -ForegroundColor Yellow
+            $zippedFilesDir = Join-Path $tempExtract "CommonFiles\Files"
+            if (Test-Path $zippedFilesDir) {
+                Get-ChildItem $zippedFilesDir -Force | Select-Object Name | ForEach-Object { Write-Host "      - $($_.Name)" -ForegroundColor Gray }
+            }
+        }
+    } catch {
+        Write-Host "    ERROR verifying zip: $($_.Exception.Message)" -ForegroundColor Red
+    } finally {
+        Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
+    }
 } else {
     Write-Host "`n[5/5] Skipping zip (pass -Zip to also create one)" -ForegroundColor Yellow
 }
