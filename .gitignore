@@ -45,6 +45,10 @@ bld/
 # Generated downloads folder
 GenerateDeliveryReports/wwwroot/downloads/
 
+# Generated report status and availability files
+SprintReportsAvailability.json
+sprint-report-status.json
+
 # Visual Studio 2017 auto generated files
 Generated\ Files/
 
@@ -199,6 +203,11 @@ DocProject/Help/html
 
 # Click-Once directory
 publish/
+
+# deploy.ps1 / deploy-appservice.ps1 output
+package/
+package-appservice/
+package-appservice.zip
 
 # Publish Web Output
 *.[Pp]ublish.xml
