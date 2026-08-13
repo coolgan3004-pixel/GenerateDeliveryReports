@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GenerateDeliveryReports.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260730214247_AddTeamLoginMetadata")]
-    partial class AddTeamLoginMetadata
+    [Migration("20260731041736_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

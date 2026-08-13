@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace GenerateDeliveryReports.Migrations
 {
     /// <inheritdoc />
-    public partial class AddTeamLoginMetadata : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
