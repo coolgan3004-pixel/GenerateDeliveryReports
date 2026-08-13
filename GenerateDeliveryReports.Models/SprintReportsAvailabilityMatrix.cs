@@ -63,4 +63,10 @@ public class SprintReportEntry
 
     /// <summary>Non-null only when sprint name could not be parsed. Describes the parsing error.</summary>
     public string? ParseError { get; set; }
+
+    /// <summary>Expected filename that was searched for (helps debug why reports are marked as missing).</summary>
+    public string? ExpectedFileName { get; set; }
+
+    /// <summary>Actual filename that was matched (may differ from expected if fuzzy matching was used).</summary>
+    public string? ActualFileName { get; set; }
 }

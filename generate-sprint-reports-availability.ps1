@@ -314,59 +314,19 @@ foreach ($project in $projects) {
         # Use the sprint name directly from the dashboard sheet
         $sprintNameFormatted = $sprintName.Trim()
 
-        # Try to find the report file with multiple fallback strategies
+        # Only accept exact filename match - no fallback strategies
+        # Teams must provide files with the correct standard naming convention
         $reportExists = $false
         $reportFile = $null
+        $actualFileName = $null
 
-        # Strategy 1: Exact match - standard naming convention
+        # Exact match - standard naming convention only
         $pptxName = "GlobalPayments-$projectName-DeliveryQualitySummaryReport-$sprintNameFormatted.pptx"
         $pptxPath = Join-Path $projectDir $pptxName
         if (Test-Path $pptxPath) {
             $reportExists = $true
             $reportFile = $pptxPath
-        }
-
-        # Strategy 2: Fuzzy match - search for files containing project name and sprint info
-        if (-not $reportExists) {
-            $searchPattern = "*DeliveryQualitySummaryReport*"
-            $matchedFiles = Get-ChildItem -Path $projectDir -Filter $searchPattern -ErrorAction SilentlyContinue |
-                           Where-Object { $_.Name -like "*.pptx" } |
-                           Sort-Object LastWriteTime -Descending
-
-            foreach ($file in $matchedFiles) {
-                $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
-
-                # Try to match sprint name (with flexible spacing/formatting)
-                if ($baseName -like "*$sprintNameFormatted*") {
-                    $reportExists = $true
-                    $reportFile = $file.FullName
-                    break
-                }
-
-                # Try partial match on key sprint identifiers
-                $sprintParts = $sprintNameFormatted -split '\s+' | Where-Object { $_.Length -gt 2 }
-                $allPartsMatch = $true
-                foreach ($part in $sprintParts) {
-                    if ($baseName -notlike "*$part*") {
-                        $allPartsMatch = $false
-                        break
-                    }
-                }
-                if ($allPartsMatch -and $sprintParts.Count -gt 0) {
-                    $reportExists = $true
-                    $reportFile = $file.FullName
-                    break
-                }
-            }
-        }
-
-        # Strategy 3: Last resort - if project has only ONE report file, use it
-        if (-not $reportExists) {
-            $allPptxFiles = Get-ChildItem -Path $projectDir -Filter "*.pptx" -ErrorAction SilentlyContinue
-            if ($allPptxFiles.Count -eq 1) {
-                $reportExists = $true
-                $reportFile = $allPptxFiles[0].FullName
-            }
+            $actualFileName = $pptxName
         }
 
         $pptxPath = if ($reportFile) { $reportFile } else { $pptxPath }
@@ -405,6 +365,8 @@ foreach ($project in $projects) {
             lagDays           = $lagDays
             status            = $status
             parseError        = $null
+            expectedFileName  = $pptxName
+            actualFileName    = $actualFileName
         })
 
         $sprintCount++

@@ -80,7 +80,7 @@ else
                                 DateTime.TryParse(e.SprintEndDate, out var endDate) &&
                                 endDate.Date == date.Date);
 
-                            <td class="text-center" style="@GetCellStyle(entry)">
+                            <td class="text-center" style="@GetCellStyle(entry)" title="@GetTooltip(entry)">
                                 @if (entry != null)
                                 {
                                     if (entry.Status == "Missing")
@@ -288,5 +288,42 @@ else
             "Missing" => "background-color: #e2e3e5;",
             _ => "background-color: #f9f9f9;"
         };
+    }
+
+    private string GetTooltip(SprintReportEntry? entry)
+    {
+        if (entry == null)
+            return "";
+
+        // Format end date nicely (e.g., "11-Aug-2026")
+        var endDateDisplay = DateTime.TryParse(entry.SprintEndDate, out var endDate)
+            ? endDate.ToString("dd-MMM-yyyy")
+            : entry.SprintEndDate ?? "Unknown";
+
+        var tooltip = $"Sprint: {entry.SprintName}\nEnd Date: {endDateDisplay}";
+
+        // Show report created date if available
+        if (!string.IsNullOrEmpty(entry.ReportCreatedDate))
+        {
+            var createdDateDisplay = DateTime.TryParse(entry.ReportCreatedDate, out var createdDate)
+                ? createdDate.ToString("dd-MMM-yyyy")
+                : entry.ReportCreatedDate;
+            tooltip += $"\nReport Created: {createdDateDisplay}";
+        }
+        else if (entry.Status == "Missing")
+        {
+            tooltip += "\nReport Created: Not Found";
+        }
+
+        // Show expected filename
+        if (!string.IsNullOrEmpty(entry.ExpectedFileName))
+            tooltip += $"\nExpected: {entry.ExpectedFileName}";
+
+        // Show actual filename if it differs from expected (indicates fuzzy match)
+        if (!string.IsNullOrEmpty(entry.ActualFileName) &&
+            entry.ActualFileName != entry.ExpectedFileName)
+            tooltip += $"\nActual: {entry.ActualFileName} ⚠️";
+
+        return tooltip;
     }
 }
