@@ -98,6 +98,7 @@ public class AppSettings
             ? SprintDashboardHtmlPath
             : Path.Combine(WritableBase, SprintDashboardHtmlPath);
     public string SprintReportStatusJsonPath { get; set; } = string.Empty;
+    public string SprintReportsAvailabilityJSONFileName { get; set; } = "SprintReportsAvailability.json";
     public List<Project> Projects { get; set; } = [];
     public CsatConfig CSAT { get; set; } = new();
     public EmailSetting EmailSettings { get; set; } = new();

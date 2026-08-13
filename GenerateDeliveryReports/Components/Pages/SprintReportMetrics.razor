@@ -1,0 +1,292 @@
+@page "/sprint-report-metrics"
+@rendermode InteractiveServer
+@using GenerateDeliveryReports.Models
+@using GenerateDeliveryReports.Data.Services
+@using System.Globalization
+@inject SprintReportsAvailabilityService AvailabilityService
+@inject ILogger<SprintReportMetrics> Logger
+
+<PageTitle>Sprint Report Metrics</PageTitle>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h1 class="mb-0">Sprint Report Delivery Metrics</h1>
+    <button class="btn btn-outline-secondary btn-sm" @onclick="Reload">
+        <span class="bi bi-arrow-clockwise"></span> Refresh
+    </button>
+</div>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+else if (_matrix is null)
+{
+    <div class="alert alert-info">
+        No metrics file found. Run <code>.\generate-sprint-reports-availability.ps1</code> to generate one,
+        then configure <code>SprintReportsAvailabilityJSONFileName</code> in <code>appsettings.json</code>.
+    </div>
+}
+else
+{
+    @* ── meta bar ── *@
+    <p class="text-muted mb-3" style="font-size:0.85rem">
+        Generated: @_matrix.Generated | File last modified: @(_lastModified?.ToString("yyyy-MM-dd HH:mm") ?? "—")
+    </p>
+
+    @* ── legend ── *@
+    <div class="mb-3">
+        <small class="text-muted">
+            <span class="badge bg-success" style="padding: 4px 8px;">0</span> Same day |
+            <span class="badge bg-warning text-dark" style="padding: 4px 8px;">1-2</span> Slightly late |
+            <span class="badge bg-danger" style="padding: 4px 8px;">3+</span> Late |
+            <span class="badge bg-secondary" style="padding: 4px 8px;">Missing</span> No report
+        </small>
+    </div>
+
+    @* ── month selector ── *@
+    <div class="mb-3">
+        <label class="form-label">Month:</label>
+        <select class="form-select" style="width: 200px;" @onchange="OnMonthChanged">
+            @foreach (var month in _availableMonths)
+            {
+                <option value="@month" selected="@(month == _selectedMonth)">@month</option>
+            }
+        </select>
+    </div>
+
+    @* ── metrics matrix ── *@
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle metrics-matrix">
+            <thead class="table-light">
+                <tr>
+                    <th class="bg-light" style="min-width: 150px; position: sticky; left: 0;">Product</th>
+                    @foreach (var date in _columnDates)
+                    {
+                        <th class="text-center bg-light" style="min-width: 70px;">
+                            <small>@date.ToString("dd-MMM")</small><br/>
+                            <small class="text-muted">@date.ToString("ddd")</small>
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var product in _matrix.Matrix)
+                {
+                    <tr>
+                        <td class="fw-bold" style="position: sticky; left: 0; background-color: #f8f9fa;">@product.Application</td>
+                        @foreach (var date in _columnDates)
+                        {
+                            var entry = product.Entries.FirstOrDefault(e =>
+                                DateTime.TryParse(e.SprintEndDate, out var endDate) &&
+                                endDate.Date == date.Date);
+
+                            <td class="text-center" style="@GetCellStyle(entry)">
+                                @if (entry != null)
+                                {
+                                    if (entry.Status == "Missing")
+                                    {
+                                        <span class="badge bg-danger">Missing</span>
+                                    }
+                                    else if (entry.LagDays.HasValue)
+                                    {
+                                        <span class="badge @GetStatusClass(entry.Status)">@entry.LagDays</span>
+                                    }
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* ── summary ── *@
+    <div class="mt-4">
+        <small class="text-muted">
+            Total sprints: @_totalSprints |
+            Green: @_countGreen |
+            Yellow: @_countYellow |
+            Red: @_countRed |
+            Missing: @_countMissing
+        </small>
+    </div>
+}
+
+<style>
+    .metrics-matrix {
+        font-size: 0.85rem;
+    }
+
+    .metrics-matrix tbody td {
+        padding: 8px 4px;
+    }
+
+    .metrics-matrix thead th {
+        padding: 8px 4px;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+</style>
+
+@code {
+    private SprintReportsAvailabilityMatrix? _matrix;
+    private DateTime? _lastModified;
+    private string? _error;
+
+    private List<string> _availableMonths = new();
+    private string _selectedMonth = "";
+    private List<DateTime> _columnDates = new();
+
+    private int _totalSprints;
+    private int _countGreen;
+    private int _countYellow;
+    private int _countRed;
+    private int _countMissing;
+
+    protected override void OnInitialized() => Reload();
+
+    private void Reload()
+    {
+        try
+        {
+            var (matrix, lastModified, error) = AvailabilityService.Load();
+            _error = error;
+            _matrix = matrix;
+            _lastModified = lastModified;
+
+            if (_matrix != null)
+            {
+                BuildMonthList();
+                UpdateMetrics();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to load sprint reports availability matrix.");
+            _error = $"Unexpected error: {ex.Message}";
+        }
+    }
+
+    private void BuildMonthList()
+    {
+        if (_matrix?.Matrix == null) return;
+
+        var months = new HashSet<string>();
+        var today = DateTime.Now.Date;
+
+        foreach (var product in _matrix.Matrix)
+        {
+            foreach (var entry in product.Entries)
+            {
+                if (DateTime.TryParse(entry.SprintEndDate, out var date))
+                {
+                    // Only include months that have already ended (sprint end date <= today)
+                    if (date.Date <= today)
+                    {
+                        months.Add(date.ToString("MMMM yyyy"));
+                    }
+                }
+            }
+        }
+
+        _availableMonths = months.OrderByDescending(m => DateTime.ParseExact(m, "MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)).Select(m => m).ToList();
+        _selectedMonth = DateTime.Now.ToString("MMMM yyyy");
+        if (!_availableMonths.Contains(_selectedMonth))
+        {
+            _selectedMonth = _availableMonths.FirstOrDefault() ?? DateTime.Now.ToString("MMMM yyyy");
+        }
+        UpdateColumnDates();
+    }
+
+    private void UpdateColumnDates()
+    {
+        if (_matrix?.Matrix == null) return;
+
+        var dates = new HashSet<DateTime>();
+        var today = DateTime.Now.Date;
+
+        foreach (var product in _matrix.Matrix)
+        {
+            foreach (var entry in product.Entries)
+            {
+                if (DateTime.TryParse(entry.SprintEndDate, out var date))
+                {
+                    // Only include sprints that have already ended (sprint end date <= today)
+                    if (date.Date <= today && date.ToString("MMMM yyyy") == _selectedMonth)
+                    {
+                        dates.Add(date.Date);
+                    }
+                }
+            }
+        }
+
+        _columnDates = dates.OrderBy(d => d).ToList();
+        UpdateMetrics();
+    }
+
+    private void UpdateMetrics()
+    {
+        _totalSprints = 0;
+        _countGreen = 0;
+        _countYellow = 0;
+        _countRed = 0;
+        _countMissing = 0;
+
+        if (_matrix?.Matrix == null) return;
+
+        foreach (var product in _matrix.Matrix)
+        {
+            foreach (var entry in product.Entries)
+            {
+                if (_columnDates.Any(d =>
+                    DateTime.TryParse(entry.SprintEndDate, out var endDate) &&
+                    endDate.Date == d.Date))
+                {
+                    _totalSprints++;
+                    switch (entry.Status)
+                    {
+                        case "Green": _countGreen++; break;
+                        case "Yellow": _countYellow++; break;
+                        case "Red": _countRed++; break;
+                        case "Missing": _countMissing++; break;
+                    }
+                }
+            }
+        }
+    }
+
+    private void OnMonthChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string month)
+        {
+            _selectedMonth = month;
+            UpdateColumnDates();
+        }
+    }
+
+    private string GetStatusClass(string? status) => status switch
+    {
+        "Green" => "bg-success",
+        "Yellow" => "bg-warning text-dark",
+        "Red" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private string GetCellStyle(SprintReportEntry? entry)
+    {
+        if (entry == null)
+            return "background-color: #f9f9f9;";
+
+        return entry.Status switch
+        {
+            "Green" => "background-color: #d4edda;",
+            "Yellow" => "background-color: #fff3cd;",
+            "Red" => "background-color: #f8d7da;",
+            "Missing" => "background-color: #e2e3e5;",
+            _ => "background-color: #f9f9f9;"
+        };
+    }
+}

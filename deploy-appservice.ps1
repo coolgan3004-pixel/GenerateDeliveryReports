@@ -108,6 +108,22 @@ Write-Host "  Metrics folder: $metricsFolder" -ForegroundColor Gray
 Write-Host "  Data folder   : $dataFolder" -ForegroundColor Gray
 Write-Host "  CSAT folder   : $csatFolder" -ForegroundColor Gray
 
+# Generate Sprint Reports Availability JSON
+Write-Host "  Generating Sprint Reports Availability matrix..." -ForegroundColor Gray
+$jsonOutputPath = Join-Path $filesDestDir "SprintReportsAvailability.json"
+$GenerateScript = Join-Path $PSScriptRoot "generate-sprint-reports-availability.ps1"
+if (-not (Test-Path $GenerateScript)) {
+    Write-Host "    WARNING: Script not found: $GenerateScript (skipping JSON generation)" -ForegroundColor Yellow
+} else {
+    try {
+        & $GenerateScript -AppSettingsPath $SrcAppSettings -OutputJson $jsonOutputPath
+        Write-Host "    OK: JSON generated and bundled at $jsonOutputPath" -ForegroundColor DarkGray
+    }
+    catch {
+        Write-Host "    WARNING: JSON generation failed: $_" -ForegroundColor Yellow
+    }
+}
+
 # Copies one file via robocopy (handles paths longer than 260 characters).
 function Copy-XlsxFile([string]$srcFile, [string]$dstFile) {
     $srcDir  = [System.IO.Path]::GetDirectoryName($srcFile).TrimEnd('\')
@@ -189,6 +205,8 @@ $content = $content -replace '(?<="BriefingArchiveFolder"\s*:\s*")[^"]*(?=")',  
 $content = $content -replace '(?<="SprintDashboardHtmlPath"\s*:\s*")[^"]*(?=")',         'SprintDashboard\\Daily_Status_Brief.html'
 # No worker-summary generator is wired up yet -- this already degrades gracefully when blank.
 $content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")',           ''
+# Sprint Reports Availability JSON bundled with the package
+$content = $content -replace '(?<="SprintReportsAvailabilityJSONFileName"\s*:\s*")[^"]*(?=")', 'CommonFiles\\Files\\SprintReportsAvailability.json'
 
 [System.IO.File]::WriteAllText($AppSettingsPath, $content, [System.Text.Encoding]::UTF8)
 
