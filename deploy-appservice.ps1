@@ -270,3 +270,7 @@ if ($Zip) {
     Write-Host "Re-run with -Zip to produce a zip ready for 'az webapp deploy' or a GitHub Action." -ForegroundColor Yellow
 }
 Write-Host ""
+
+# Explicitly exit with success code (prevents CI/CD pipeline from inheriting error codes from
+# any external processes or git operations that may have run during script execution)
+exit 0
