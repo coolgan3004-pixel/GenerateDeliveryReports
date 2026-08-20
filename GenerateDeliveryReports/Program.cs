@@ -207,9 +207,12 @@ if (azureAdConfigured)
 
 app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options) =>
 {
-    var path = options.Value.WorkerSummaryFilePath;
+    var path = options.Value.WorkerRunHistoryFilePath;
     if (string.IsNullOrWhiteSpace(path))
-        path = Path.Combine(AppContext.BaseDirectory, "wwwroot", "worker-summary.html");
+        path = Path.Combine(AppContext.BaseDirectory, "wwwroot", "CommonFiles", "WorkerHistory", "run-workerhistory.json");
+
+    // Convert JSON path to HTML path
+    path = path.Replace(".json", ".html");
 
     if (!File.Exists(path))
         return Results.NotFound();

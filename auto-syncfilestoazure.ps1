@@ -1,20 +1,27 @@
 # Auto-Sync CommonFiles to Azure App Service
-# Usage: .\auto-syncfilestoazure.ps1 -AzureAppName "app" -AzureUsername "user@email.com" -AzurePassword "pwd" -AppSettingsPath "path" -DeploymentFolder "path"
+# Usage: .\auto-syncfilestoazure.ps1 -ResourceGroupName "group" -AppServiceName "DailyStatus" -AzureUsername "user" -AzurePassword "pwd" -AppSettingsPath "path" -DeploymentFolder "path"
+# Note: AzureUsername/Password are your Azure account credentials for Kudu authentication
 
 param(
-    [string]$AzureHostName = "",
-    [string]$AzureUsername = "",
-    [string]$AzurePassword = "",
+    [string]$ResourceGroupName = "",
+    [string]$AppServiceName = "",
     [string]$AppSettingsPath = "",
-    [string]$DeploymentFolder = ""
+    [string]$DeploymentFolder = "",
+    [string]$AzureUsername = "",
+    [string]$AzurePassword = ""
 )
 #find a way to avoid hardcoding of the Generatescript path
 $GenerateScript = "C:\Repository\GenerateDeliveryReports\GenerateDeliveryReports\generate-sprint-reports-availability.ps1"
 
 $ErrorActionPreference = "Stop"
 
-if (-not $AzureHostName -or -not $AzureUsername -or -not $AzurePassword) {
-    Write-Host "ERROR: Missing Azure credentials" -ForegroundColor Red
+if (-not $ResourceGroupName -or -not $AppServiceName) {
+    Write-Host "ERROR: Missing required parameters -ResourceGroupName and -AppServiceName" -ForegroundColor Red
+    exit 1
+}
+
+if (-not $AzureUsername -or -not $AzurePassword) {
+    Write-Host "ERROR: Missing Azure credentials -AzureUsername and -AzurePassword" -ForegroundColor Red
     exit 1
 }
 
@@ -152,28 +159,36 @@ if ($jsonFileInZip) {
 }
 $zipContents.Dispose()
 
-# Upload to Kudu
-Write-Host "Uploading to Azure..." -ForegroundColor Yellow
-# Delete old JSON file first (to force refresh)
-Write-Host "Cleaning up old files in Azure..." -ForegroundColor Yellow
-$DeleteUrl = "https://$AzureHostname/api/vfs/site/wwwroot/CommonFiles/Files/SprintReportsAvailability.json"
+# Get the Azure app hostname
+Write-Host "Getting App Service details..." -ForegroundColor Yellow
+$appHostName = az webapp show --resource-group $ResourceGroupName --name $AppServiceName --query "defaultHostName" -o tsv
+if (-not $appHostName) {
+    Write-Host "ERROR: Could not get app details" -ForegroundColor Red
+    exit 1
+}
+
+# Construct Kudu URL from hostname
+# Example: dailystatus-g9fwfxfxfmdad8b4.canadacentral-01.azurewebsites.net
+#       → dailystatus-g9fwfxfxfmdad8b4.scm.canadacentral-01.azurewebsites.net
+$KuduUrl = "https://$($appHostName -replace '^([^.]+)\.', '$1.scm.')"
+Write-Host "Kudu URL: $KuduUrl" -ForegroundColor Gray
+$AuthString = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($AzureUsername):$($AzurePassword)"))
+$Headers = @{ "Authorization" = "Basic $AuthString" }
+
+# Upload the CommonFiles zip to wwwroot/CommonFiles using VFS
+Write-Host "Uploading CommonFiles to Azure..." -ForegroundColor Yellow
+$VfsUrl = "$KuduUrl/api/zip/site/wwwroot/CommonFiles"
+
 try {
-    $DeleteResponse = Invoke-WebRequest -Uri $DeleteUrl -Headers $Headers -Method DELETE -UseBasicParsing -ErrorAction SilentlyContinue
-    Write-Host "  Old file deleted" -ForegroundColor Green
+    $Response = Invoke-WebRequest -Uri $VfsUrl -Method POST -Headers $Headers `
+      -InFile $ZipPath -UseBasicParsing -TimeoutSec 300
+    Write-Host "Upload Status: $($Response.StatusCode)" -ForegroundColor Green
+    Write-Host "CommonFiles updated successfully!" -ForegroundColor Green
 }
 catch {
-    Write-Host "  Note: Could not delete old file - will be overwritten" -ForegroundColor Yellow
+    Write-Host "ERROR: Upload failed: $_" -ForegroundColor Red
+    exit 1
 }
-
-# Upload to Kudu
-Write-Host "Uploading to Azure..." -ForegroundColor Yellow
-$KuduUrl = "https://$AzureHostname/api/zip/site/wwwroot/CommonFiles"
-$AuthString = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($AzureUsername):$($AzurePassword)"))
-$Headers = @{ "Authorization" = "Basic $AuthString"; "Content-Type" = "application/zip" }
-
-$Response = Invoke-WebRequest -Uri $KuduUrl -Method POST -Headers $Headers -InFile $ZipPath -UseBasicParsing -TimeoutSec 300
-Write-Host "Upload Status: $($Response.StatusCode)" -ForegroundColor Green
-Write-Host "Response: $($Response.Content)" -ForegroundColor Gray
 # Cleanup
 Remove-Item $ZipPath -Force -ErrorAction SilentlyContinue
 Remove-Item $TempZipBase -Recurse -Force -ErrorAction SilentlyContinue
