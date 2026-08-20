@@ -205,7 +205,7 @@ if (azureAdConfigured)
     app.MapControllers(); // Microsoft.Identity.Web.UI's Account/SignIn, Account/SignOut endpoints
 }
 
-app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options) =>
+app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options, ILogger<Program> logger) =>
 {
     var path = options.Value.WorkerRunHistoryFilePath;
     if (string.IsNullOrWhiteSpace(path))
@@ -214,8 +214,15 @@ app.MapGet("/api/worker-summary", async (IOptions<AppSettings> options) =>
     // Convert JSON path to HTML path
     path = path.Replace(".json", ".html");
 
+    logger.LogInformation($"Worker summary endpoint - Looking for file at: {path}");
+    logger.LogInformation($"File exists: {File.Exists(path)}");
+    logger.LogInformation($"AppContext.BaseDirectory: {AppContext.BaseDirectory}");
+
     if (!File.Exists(path))
+    {
+        logger.LogWarning($"Worker summary file not found at: {path}");
         return Results.NotFound();
+    }
 
     var html = await File.ReadAllTextAsync(path);
     return Results.Content(html, "text/html");

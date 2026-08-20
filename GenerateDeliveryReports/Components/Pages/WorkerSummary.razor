@@ -50,9 +50,12 @@ else
     {
         try
         {
-            var path = AppSettings.Value.WorkerSummaryFilePath;
+            var path = AppSettings.Value.WorkerRunHistoryFilePath;
             if (string.IsNullOrWhiteSpace(path))
-                path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "worker-summary.html");
+                path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "CommonFiles", "WorkerHistory", "run-workerhistory.json");
+
+            // Convert JSON path to HTML path
+            path = path.Replace(".json", ".html");
 
             _fileExists = File.Exists(path);
             if (_fileExists)
