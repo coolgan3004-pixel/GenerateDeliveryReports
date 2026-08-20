@@ -197,7 +197,7 @@ Write-Host "  PPTX template bundled: $($templateFile.Name)" -ForegroundColor Gre
 $workerHtmlDestDir = Join-Path $PackageDir "CommonFiles\WorkerHistory"
 if ($DeploymentFolder -and (Test-Path $DeploymentFolder)) {
     Write-Host "`n[3b/5] Bundling Worker Run History HTML..." -ForegroundColor Yellow
-    $htmlFile = Get-ChildItem $DeploymentFolder -Filter "run-workerhistory.html" | Select-Object -First 1
+    $htmlFile = Get-ChildItem $DeploymentFolder -Filter "run-workerhistory.html" -Recurse | Select-Object -First 1
     if ($htmlFile) {
         New-Item -ItemType Directory -Path $workerHtmlDestDir -Force | Out-Null
         Copy-Item -Path $htmlFile.FullName -Destination $workerHtmlDestDir -Force
