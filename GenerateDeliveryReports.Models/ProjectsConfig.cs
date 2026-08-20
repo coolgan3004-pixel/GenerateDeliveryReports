@@ -87,6 +87,8 @@ public class AppSettings
             ? SprintMetricsReportTemplatePath
             : Path.Combine(AppContext.BaseDirectory, SprintMetricsReportTemplatePath);
     public string WorkerSummaryFilePath { get; set; } = string.Empty;
+
+    public string WorkerRunHistoryFilePath { get; set; } = string.Empty;
     public string SprintDashboardHtmlPath { get; set; } = string.Empty;
 
     /// <summary>Same relative/absolute resolution as <see cref="ResolvedBriefingArchiveFolder"/>, but for

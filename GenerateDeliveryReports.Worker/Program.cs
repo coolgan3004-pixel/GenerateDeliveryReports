@@ -27,10 +27,18 @@ try
     Log.Information("GenerateDeliveryReports Worker starting.");
 
     var builder = Host.CreateApplicationBuilder(args);
-    builder.Configuration.AddJsonFile("workeremailsettings.json", optional: true, reloadOnChange: false);
+    // Enable configuration reload when files change
+    builder.Configuration.Sources.Clear();
+    builder.Configuration
+        .SetBasePath(AppContext.BaseDirectory)
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
+        .AddJsonFile("workeremailsettings.json", optional: true, reloadOnChange: true)
+        .AddEnvironmentVariables();
 
     builder.Services.AddSerilog();
     builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+    builder.Services.AddSingleton<RunHistoryService>();
     builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
     builder.Services.AddSingleton<IEmailService, OutlookEmailService>();
     builder.Services.AddSingleton<ReportWorker>();

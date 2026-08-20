@@ -9,19 +9,22 @@ public class ReportWorker
 {
     private readonly IDataProcessor _dataProcessor;
     private readonly IEmailService _emailService;
-    private readonly AppSettings _appSettings;
+    private readonly IOptionsMonitor<AppSettings> _appSettings;
     private readonly ILogger<ReportWorker> _logger;
+    private readonly RunHistoryService _runHistoryService;
 
     public ReportWorker(
         IDataProcessor dataProcessor,
         IEmailService emailService,
-        IOptions<AppSettings> appSettings,
-        ILogger<ReportWorker> logger)
+        IOptionsMonitor<AppSettings> appSettings,
+        ILogger<ReportWorker> logger,
+        RunHistoryService runHistoryService)
     {
         _dataProcessor = dataProcessor;
         _emailService  = emailService;
-        _appSettings   = appSettings.Value;
+        _appSettings   = appSettings;
         _logger        = logger;
+        _runHistoryService = runHistoryService;
     }
 
     public async Task RunOnceAsync(CancellationToken cancellationToken)
@@ -207,13 +210,18 @@ public class ReportWorker
 
     private async Task SaveCycleSummaryAsync(List<SprintReportResult> results, DateTimeOffset cycleTime)
     {
-        var html = ReportEmailBuilder.BuildHtml(results, cycleTime);
+        var historyFilePath = _appSettings.CurrentValue.WorkerRunHistoryFilePath;
+        var historyHTMLPath = _appSettings.CurrentValue.WorkerRunHistoryFilePath.Replace(".json", ".html");
+
+        var historyList = await _runHistoryService.AddRunAndGetHistoryAsync(results, historyFilePath);
+
+        var html = ReportEmailBuilder.BuildHtml(historyList, cycleTime);
 
         try
         {
-            var filePath = string.IsNullOrWhiteSpace(_appSettings.WorkerSummaryFilePath)
+            var filePath = string.IsNullOrWhiteSpace(historyHTMLPath)
                 ? Path.Combine(AppContext.BaseDirectory, "LogFiles", "worker-summary.html")
-                : _appSettings.WorkerSummaryFilePath;
+                : historyHTMLPath;
 
             Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
             await File.WriteAllTextAsync(filePath, html);
@@ -233,7 +241,7 @@ public class ReportWorker
 
     private Task SendCycleSummaryEmailAsync(string html, DateTimeOffset cycleTime)
     {
-        var email = _appSettings.EmailSettings;
+        var email = _appSettings.CurrentValue.EmailSettings;
 
         if (email.Users.Count == 0)
         {

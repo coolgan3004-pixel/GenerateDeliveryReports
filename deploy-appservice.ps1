@@ -5,6 +5,7 @@
 #   .\deploy-appservice.ps1
 #   .\deploy-appservice.ps1 -Zip
 #   .\deploy-appservice.ps1 -OutputPath "D:\Packages\GenerateDeliveryReports" -Zip
+#   .\deploy-appservice.ps1 -DeploymentFolder "C:\Deployments\GenerateDeliveryReports" -Zip
 #   .\deploy-appservice.ps1 -Runtime win-x64 -Zip   # if you move off Free tier later
 #
 # The script will:
@@ -44,6 +45,7 @@ param(
     [string]$Configuration = "Release",
     [string]$Runtime = "win-x86",
     [string]$OutputPath = "",
+    [string]$DeploymentFolder = "",
     [switch]$Zip
 )
 
@@ -191,6 +193,25 @@ if (-not $templateFile) {
 }
 Write-Host "  PPTX template bundled: $($templateFile.Name)" -ForegroundColor Green
 
+# Step 3b: Copy Worker Run History HTML file from deployment folder (if provided)
+$workerHtmlDestDir = Join-Path $PackageDir "CommonFiles\WorkerHistory"
+if ($DeploymentFolder -and (Test-Path $DeploymentFolder)) {
+    Write-Host "`n[3b/5] Bundling Worker Run History HTML..." -ForegroundColor Yellow
+    $htmlFile = Get-ChildItem $DeploymentFolder -Filter "run-workerhistory.html" | Select-Object -First 1
+    if ($htmlFile) {
+        New-Item -ItemType Directory -Path $workerHtmlDestDir -Force | Out-Null
+        Copy-Item -Path $htmlFile.FullName -Destination $workerHtmlDestDir -Force
+        Write-Host "  Worker history HTML bundled: $($htmlFile.Name)" -ForegroundColor Green
+    } else {
+        Write-Host "  INFO: No run-workerhistory.html found in $DeploymentFolder (this is optional)" -ForegroundColor Cyan
+    }
+} else {
+    if ($DeploymentFolder) {
+        Write-Host "  WARNING: DeploymentFolder specified but not found: $DeploymentFolder" -ForegroundColor Yellow
+    }
+    Write-Host "  Skipping Worker History (pass -DeploymentFolder to include it)" -ForegroundColor Gray
+}
+
 # Step 4: Patch appsettings.json -- relative paths only; no dev-machine absolute paths;
 # no Python-dependent features (App Service has no Python runtime).
 Write-Host "`n[4/5] Patching appsettings.json for App Service..." -ForegroundColor Yellow
@@ -205,6 +226,8 @@ $content = $content -replace '(?<="BriefingArchiveFolder"\s*:\s*")[^"]*(?=")',  
 $content = $content -replace '(?<="SprintDashboardHtmlPath"\s*:\s*")[^"]*(?=")',         'SprintDashboard\\Daily_Status_Brief.html'
 # No worker-summary generator is wired up yet -- this already degrades gracefully when blank.
 $content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")',           ''
+# Worker Run History HTML path for the dashboard
+$content = $content -replace '(?<="WorkerRunHistoryFilePath"\s*:\s*")[^"]*(?=")',        'CommonFiles\\WorkerHistory\\run-workerhistory.html'
 # Sprint Reports Availability JSON bundled with the package
 $content = $content -replace '(?<="SprintReportsAvailabilityJSONFileName"\s*:\s*")[^"]*(?=")', 'CommonFiles\\Files\\SprintReportsAvailability.json'
 
@@ -249,6 +272,11 @@ Write-Host " Package Complete!" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Package location: $PackageDir" -ForegroundColor Yellow
+Write-Host ""
+if ($DeploymentFolder -and (Test-Path $DeploymentFolder)) {
+    Write-Host "Deployment folder: $DeploymentFolder" -ForegroundColor Yellow
+    Write-Host "  Worker history HTML will be bundled at: CommonFiles\WorkerHistory\run-workerhistory.html" -ForegroundColor Gray
+}
 Write-Host ""
 Write-Host "Still needed before this actually works on App Service (not handled by this script):" -ForegroundColor Yellow
 Write-Host "  - Confirm Configuration -> General settings -> Platform matches -Runtime ($Runtime)" -ForegroundColor White
