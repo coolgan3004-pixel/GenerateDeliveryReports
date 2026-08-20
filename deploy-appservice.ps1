@@ -226,8 +226,8 @@ $content = $content -replace '(?<="BriefingArchiveFolder"\s*:\s*")[^"]*(?=")',  
 $content = $content -replace '(?<="SprintDashboardHtmlPath"\s*:\s*")[^"]*(?=")',         'SprintDashboard\\Daily_Status_Brief.html'
 # No worker-summary generator is wired up yet -- this already degrades gracefully when blank.
 $content = $content -replace '(?<="WorkerSummaryFilePath"\s*:\s*")[^"]*(?=")',           ''
-# Worker Run History HTML path for the dashboard
-$content = $content -replace '(?<="WorkerRunHistoryFilePath"\s*:\s*")[^"]*(?=")',        'CommonFiles\\WorkerHistory\\run-workerhistory.html'
+# Worker Run History JSON path (endpoint converts to .html)
+$content = $content -replace '(?<="WorkerRunHistoryFilePath"\s*:\s*")[^"]*(?=")',        'CommonFiles\\WorkerHistory\\run-workerhistory.json'
 # Sprint Reports Availability JSON bundled with the package
 $content = $content -replace '(?<="SprintReportsAvailabilityJSONFileName"\s*:\s*")[^"]*(?=")', 'CommonFiles\\Files\\SprintReportsAvailability.json'
 
