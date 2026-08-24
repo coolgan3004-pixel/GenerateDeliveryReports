@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
     <PackageReference Include="Microsoft.Identity.Web" Version="4.13.2" />
     <PackageReference Include="Microsoft.Identity.Web.UI" Version="4.13.2" />
+    <PackageReference Include="MsgKit" Version="3.0.5" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />

@@ -58,6 +58,9 @@ builder.Services.AddScoped<CsatService>();
 builder.Services.AddScoped<SprintDashboardService>();
 builder.Services.AddScoped<SprintReportStatusService>();
 builder.Services.AddScoped<SprintReportsAvailabilityService>();
+
+// Register email export service
+builder.Services.AddScoped<GenerateDeliveryReports.Services.EmailMessageGenerator>();
 builder.Services.AddSingleton<MeetingMinutesService>();
 
 builder.Services.AddHttpClient<ClaudeApiClient>();

@@ -140,15 +140,37 @@
                             <label class="form-label small fw-semibold">Body</label>
                             <textarea class="form-control form-control-sm" rows="5" @bind="emailBody"></textarea>
                         </div>
-                        <button class="btn btn-primary w-100"
-                                disabled="@(attachedSheets.Count == 0 || isSending)"
-                                @onclick="SendEmail">
-                            @if (isSending)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1"></span>
-                            }
-                            Send (@attachedSheets.Count attachment@(attachedSheets.Count == 1 ? "" : "s"))
-                        </button>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary"
+                                    disabled="@(attachedSheets.Count == 0 || isSending)"
+                                    @onclick="SendEmail">
+                                @if (isSending)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                Send (@attachedSheets.Count attachment@(attachedSheets.Count == 1 ? "" : "s"))
+                            </button>
+                            <div class="btn-group" role="group">
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        disabled="@(string.IsNullOrEmpty(emailTo) || string.IsNullOrEmpty(emailSubject))"
+                                        @onclick="DownloadEmailAsEml">
+                                    📥 Download as EML
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        disabled="@(string.IsNullOrEmpty(emailTo) || string.IsNullOrEmpty(emailSubject))"
+                                        @onclick="OpenInDesktopOutlook">
+                                    🖥️ Open in Outlook
+                                </button>
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        disabled="@(string.IsNullOrEmpty(emailTo) || string.IsNullOrEmpty(emailSubject))"
+                                        @onclick="OpenInOutlookWeb">
+                                    🌐 Outlook Web
+                                </button>
+                            </div>
+                        </div>
                         @if (!string.IsNullOrEmpty(sendResult))
                         {
                             <div class="alert @(sendSuccess ? "alert-success" : "alert-danger") mt-2 py-2 small">
@@ -511,6 +533,68 @@
 
         isSending = false;
         StateHasChanged();
+    }
+
+    private async Task DownloadEmailAsEml()
+    {
+        try
+        {
+            var queryParams = new Dictionary<string, string>
+            {
+                { "clientName", selectedClient },
+                { "from", emailFrom },
+                { "to", emailTo },
+                { "subject", emailSubject },
+                { "body", emailBody }
+            };
+
+            var query = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
+            var url = $"/api/csat/download-email?{query}";
+
+            await JS.InvokeVoidAsync("window.open", url, "_blank");
+        }
+        catch (Exception ex)
+        {
+            sendResult = $"Error: {ex.Message}";
+            sendSuccess = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenInDesktopOutlook()
+    {
+        try
+        {
+            var mailtoUri = $"mailto:{Uri.EscapeDataString(emailTo)}"
+                + $"?subject={Uri.EscapeDataString(emailSubject)}"
+                + $"&body={Uri.EscapeDataString(emailBody)}";
+
+            await JS.InvokeVoidAsync("window.open", mailtoUri);
+        }
+        catch (Exception ex)
+        {
+            sendResult = $"Error: {ex.Message}";
+            sendSuccess = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OpenInOutlookWeb()
+    {
+        try
+        {
+            var subject = Uri.EscapeDataString(emailSubject);
+            var body = Uri.EscapeDataString(emailBody);
+            var outlookWebUrl = $"https://outlook.office.com/mail/deeplink/compose?to={emailTo}&subject={subject}&body={body}";
+
+            await JS.InvokeVoidAsync("window.open", outlookWebUrl, "_blank");
+        }
+        catch (Exception ex)
+        {
+            sendResult = $"Error: {ex.Message}";
+            sendSuccess = false;
+            StateHasChanged();
+        }
     }
 }
 
