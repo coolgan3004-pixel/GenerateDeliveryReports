@@ -233,9 +233,9 @@ public class ReportWorker
         }
 
         var hasUpdates = results.Count > 0;
-        if (hasUpdates)
-            await SendCycleSummaryEmailAsync(html, cycleTime);
-        else
+        if (!hasUpdates)
+           // await SendCycleSummaryEmailAsync(html, cycleTime);
+        //else
             _logger.LogInformation("No results this cycle -- email skipped.");
     }
 

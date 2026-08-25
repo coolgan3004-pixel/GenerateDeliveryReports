@@ -4,7 +4,7 @@
 @using GenerateDeliveryReports.Models
 @using GenerateDeliveryReports.Data.Services
 @inject CsatService CsatService
-@inject MeetingMinutesService? MinutesService
+@inject IServiceProvider ServiceProvider
 @inject IJSRuntime JS
 
 <PageTitle>CSAT Report</PageTitle>
@@ -345,20 +345,23 @@
     private string recordingDuration = "0:00";
     private System.Timers.Timer? _recordingTimer;
     private int _recordingSeconds = 0;
-
-   
+    private MeetingMinutesService? MinutesService;
 
     protected override void OnInitialized()
     {
-        try{
-        clientNames = CsatService.GetClientNames();
-        emailFrom = CsatService.GetDefaultFromEmail();
+        try
+        {
+            clientNames = CsatService.GetClientNames();
+            emailFrom = CsatService.GetDefaultFromEmail();
+
+            // Manually resolve MeetingMinutesService if available (Development only)
+            MinutesService = ServiceProvider.GetService(typeof(MeetingMinutesService)) as MeetingMinutesService;
         }
         catch (Exception ex)
-    {
-        errorMessage = $"CSAT ERROR: {ex.GetType().Name}\n{ex.Message}\n\nStack: {ex.StackTrace}";
-        Console.Error.WriteLine(errorMessage);
-    }
+        {
+            errorMessage = $"CSAT ERROR: {ex.GetType().Name}\n{ex.Message}\n\nStack: {ex.StackTrace}";
+            Console.Error.WriteLine(errorMessage);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
