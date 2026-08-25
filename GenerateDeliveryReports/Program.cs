@@ -15,6 +15,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Serilog;
+using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -256,5 +257,29 @@ if (isStandaloneProduction)
         catch { /* non-critical */ }
     });
 }
+
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+        var exception = exceptionHandlerPathFeature?.Error;
+        
+        context.Response.ContentType = "text/html";
+        
+        var html = $@"
+            <html>
+            <body style='font-family:Arial;padding:20px;'>
+            <h1>ERROR in CSAT Report</h1>
+            <p><strong>{exception?.GetType().Name}</strong></p>
+            <p>{exception?.Message}</p>
+            <pre style='background:#f0f0f0;padding:10px;overflow:auto;'>{exception?.StackTrace}</pre>
+            </body>
+            </html>";
+        
+        await context.Response.WriteAsync(html);
+    });
+});
+
 
 app.Run();
