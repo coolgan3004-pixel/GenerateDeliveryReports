@@ -4,7 +4,7 @@
 @using GenerateDeliveryReports.Models
 @using GenerateDeliveryReports.Data.Services
 @inject CsatService CsatService
-@inject MeetingMinutesService MinutesService
+@inject MeetingMinutesService? MinutesService
 @inject IJSRuntime JS
 
 <PageTitle>CSAT Report</PageTitle>
@@ -217,6 +217,7 @@
     }
 </div>
 
+@if(MinutesService != null){
 @* ─── Meeting Minutes Panel ─── *@
 <hr class="my-4" />
 <div class="container-fluid">
@@ -309,6 +310,7 @@
         </div>
     }
 </div>
+}
 
 @code {
     private IEnumerable<string> clientNames = [];
