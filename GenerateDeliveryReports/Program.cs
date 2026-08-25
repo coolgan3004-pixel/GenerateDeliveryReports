@@ -62,7 +62,11 @@ builder.Services.AddScoped<SprintReportsAvailabilityService>();
 
 // Register email export service
 builder.Services.AddScoped<GenerateDeliveryReports.Services.EmailMessageGenerator>();
-builder.Services.AddSingleton<MeetingMinutesService>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<MeetingMinutesService>();
+}
+
 
 builder.Services.AddHttpClient<ClaudeApiClient>();
 builder.Services.AddSingleton<BriefingCache>();
