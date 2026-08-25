@@ -1,3 +1,4 @@
+
 @page "/csat-report"
 @rendermode InteractiveServer
 @using GenerateDeliveryReports.Models
@@ -8,7 +9,15 @@
 
 <PageTitle>CSAT Report</PageTitle>
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <pre style="white-space: pre-wrap; word-wrap: break-word;">@errorMessage</pre>
+    </div>
+}
+
 <h1 class="mb-4">CSAT Report</h1>
+
 
 <div class="container-fluid">
 
@@ -335,10 +344,19 @@
     private System.Timers.Timer? _recordingTimer;
     private int _recordingSeconds = 0;
 
+   
+
     protected override void OnInitialized()
     {
+        try{
         clientNames = CsatService.GetClientNames();
         emailFrom = CsatService.GetDefaultFromEmail();
+        }
+        catch (Exception ex)
+    {
+        errorMessage = $"CSAT ERROR: {ex.GetType().Name}\n{ex.Message}\n\nStack: {ex.StackTrace}";
+        Console.Error.WriteLine(errorMessage);
+    }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
