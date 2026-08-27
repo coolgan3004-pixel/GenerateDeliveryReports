@@ -94,26 +94,54 @@ public class ReportWorker
         if (sprint.SprintEndDate == null)
         {
             _logger.LogWarning("[{Project}] [{Sprint}] Skipping — could not determine sprint end date.", sprint.ProjectName, sprint.SprintName);
-            return null;
+            return new SprintReportResult
+            {
+                ProjectName = sprint.ProjectName,
+                SprintName = sprint.SprintName,
+                SprintEndDate = sprint.SprintEndDate,
+                Outcome = SprintReportOutcome.Skipped,
+                Detail = "Could not determine sprint end date"
+            };
         }
 
         if (sprint.SprintEndDate.Value > DateTime.Today)
         {
             _logger.LogInformation("[{Project}] [{Sprint}] Skipping — sprint ends {EndDate}, not yet due.", sprint.ProjectName, sprint.SprintName, sprint.SprintEndDate.Value.ToShortDateString());
-            return null;
+            return new SprintReportResult
+            {
+                ProjectName = sprint.ProjectName,
+                SprintName = sprint.SprintName,
+                SprintEndDate = sprint.SprintEndDate,
+                Outcome = SprintReportOutcome.Skipped,
+                Detail = $"Sprint ends {sprint.SprintEndDate.Value:yyyy-MM-dd}, not yet due"
+            };
         }
 
         if (sprint.SprintEndDate.Value < new DateTime(2026, 4, 1))
         {
             _logger.LogInformation("[{Project}] [{Sprint}] Skipping — sprint ended before Apr 1 2026.", sprint.ProjectName, sprint.SprintName);
-            return null;
+            return new SprintReportResult
+            {
+                ProjectName = sprint.ProjectName,
+                SprintName = sprint.SprintName,
+                SprintEndDate = sprint.SprintEndDate,
+                Outcome = SprintReportOutcome.Skipped,
+                Detail = "Sprint ended before Apr 1 2026"
+            };
         }
 
         // Skip if report already exists
         if (File.Exists(sprint.OutputPPTPath))
         {
             _logger.LogInformation("[{Project}] [{Sprint}] Skipping — report already exists at {Path}.", sprint.ProjectName, sprint.SprintName, sprint.OutputPPTPath);
-            return null;
+            return new SprintReportResult
+            {
+                ProjectName = sprint.ProjectName,
+                SprintName = sprint.SprintName,
+                SprintEndDate = sprint.SprintEndDate,
+                Outcome = SprintReportOutcome.Skipped,
+                Detail = $"Report already exists"
+            };
         }
 
         // Report is missing for a completed sprint

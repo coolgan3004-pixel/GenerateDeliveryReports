@@ -562,6 +562,12 @@
     {
         try
         {
+            // Get attachment paths from generatedPdfs dictionary
+            var attachmentPaths = attachedSheets
+                .Where(s => generatedPdfs.ContainsKey(s))
+                .Select(s => generatedPdfs[s])
+                .ToList();
+
             var queryParams = new Dictionary<string, string>
             {
                 { "clientName", selectedClient },
@@ -570,6 +576,12 @@
                 { "subject", emailSubject },
                 { "body", emailBody }
             };
+
+            // Add attachments if any
+            if (attachmentPaths.Count > 0)
+            {
+                queryParams.Add("attachments", string.Join(";", attachmentPaths));
+            }
 
             var query = string.Join("&", queryParams.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
             var url = $"/api/csat/download-email?{query}";

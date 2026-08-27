@@ -5,7 +5,13 @@ namespace GenerateDeliveryReports.Services;
 
 public class EmailMessageGenerator
 {
-    public byte[] GenerateOutlookMessage(string fromEmail, string toEmail, string subject, string htmlBody, string? ccEmails = null)
+    public byte[] GenerateOutlookMessage(
+        string fromEmail,
+        string toEmail,
+        string subject,
+        string htmlBody,
+        string? ccEmails = null,
+        IEnumerable<string>? attachmentPaths = null)
     {
         // Create MIME message
         var message = new MimeMessage();
@@ -24,8 +30,21 @@ public class EmailMessageGenerator
             }
         }
 
-        // Create HTML body
+        // Create HTML body with attachments
         var builder = new BodyBuilder { HtmlBody = htmlBody };
+
+        // Add attachments if provided
+        if (attachmentPaths != null)
+        {
+            foreach (var filePath in attachmentPaths)
+            {
+                if (File.Exists(filePath))
+                {
+                    builder.Attachments.Add(filePath);
+                }
+            }
+        }
+
         message.Body = builder.ToMessageBody();
 
         // Convert to EML (MIME format) as byte array

@@ -4,7 +4,8 @@ public enum SprintReportOutcome
 {
     Missing,
     Completed,
-    Errored
+    Errored,
+    Skipped
 }
 
 public class SprintReportResult

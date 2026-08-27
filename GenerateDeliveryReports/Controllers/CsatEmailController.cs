@@ -27,12 +27,16 @@ public class CsatEmailController : ControllerBase
         [FromQuery] string to,
         [FromQuery] string subject,
         [FromQuery] string body,
-        [FromQuery(Name = "cc")] string? cc = null)
+        [FromQuery(Name = "cc")] string? cc = null,
+        [FromQuery(Name = "attachments")] string? attachments = null)
     {
         try
         {
-            // Generate email message
-            byte[] emlBytes = _emailGenerator.GenerateOutlookMessage(from, to, subject, body, cc);
+            // Parse attachment paths (semicolon-separated)
+            var attachmentPaths = attachments?.Split(';', StringSplitOptions.RemoveEmptyEntries) ?? [];
+
+            // Generate email message with attachments
+            byte[] emlBytes = _emailGenerator.GenerateOutlookMessage(from, to, subject, body, cc, attachmentPaths);
 
             // Return as downloadable EML file
             return File(emlBytes, "message/rfc822", $"{clientName}_{DateTime.Now:yyyyMMdd_HHmmss}.eml");
