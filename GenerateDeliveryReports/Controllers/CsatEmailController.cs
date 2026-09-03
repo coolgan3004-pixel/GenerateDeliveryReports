@@ -33,8 +33,11 @@ public class CsatEmailController : ControllerBase
         try
         {
             // Parse attachment paths (semicolon-separated)
-            var attachmentPaths = attachments?.Split(';', StringSplitOptions.RemoveEmptyEntries) ?? [];
-
+            var attachmentPaths = string.IsNullOrEmpty(attachments)
+            ? []
+            : Uri.UnescapeDataString(attachments)
+                .Split(';', StringSplitOptions.RemoveEmptyEntries);
+                
             // Generate email message with attachments
             byte[] emlBytes = _emailGenerator.GenerateOutlookMessage(from, to, subject, body, cc, attachmentPaths);
 
