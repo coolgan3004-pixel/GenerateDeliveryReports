@@ -16,6 +16,7 @@ using Microsoft.Identity.Web;
 using Microsoft.Identity.Web.UI;
 using Serilog;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.Extensions.AI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +51,7 @@ builder.Services.AddRazorComponents()
 
 // Bind AppSettings from configuration
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"));
+builder.Services.Configure<AutomationReportingOptions>(builder.Configuration.GetSection("AutomationReporting"));
 
 // Register data layer services
 builder.Services.AddSingleton<IDataProcessor, DataProcessor>();
@@ -59,6 +61,15 @@ builder.Services.AddScoped<CsatService>();
 builder.Services.AddScoped<SprintDashboardService>();
 builder.Services.AddScoped<SprintReportStatusService>();
 builder.Services.AddScoped<SprintReportsAvailabilityService>();
+builder.Services.AddScoped<IAutomationWorkbookReader, AutomationWorkbookReader>();
+builder.Services.AddScoped<IAutomationInsightService, AutomationInsightService>();
+builder.Services.AddHttpClient<OllamaChatClient>((provider, client) =>
+{
+    var llm = provider.GetRequiredService<IOptions<AutomationReportingOptions>>().Value.Llm;
+    client.BaseAddress = new Uri(llm.Ollama.BaseUrl.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(llm.RequestTimeoutSeconds);
+});
+builder.Services.AddScoped<IChatClient>(provider => provider.GetRequiredService<OllamaChatClient>());
 
 // Register email export service
 builder.Services.AddScoped<GenerateDeliveryReports.Services.EmailMessageGenerator>();

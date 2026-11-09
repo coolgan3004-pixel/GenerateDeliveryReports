@@ -1,0 +1,136 @@
+@page "/automation-weekly-report"
+@rendermode InteractiveServer
+@using GenerateDeliveryReports.Models
+@using GenerateDeliveryReports.Data.Services
+@inject IAutomationWorkbookReader WorkbookReader
+@inject IAutomationInsightService InsightService
+
+<PageTitle>Automation Weekly Report</PageTitle>
+
+<h1 class="mb-4">Automation Weekly Report</h1>
+
+<div class="container-fluid">
+    <div class="card mb-3">
+        <div class="card-body">
+            <h2 class="h5">1. Upload workbook and select weeks</h2>
+            <InputFile OnChange="LoadWorkbookAsync" accept=".xlsx" class="form-control mb-3" />
+            @if (sheetNames.Count > 0)
+            {
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Current week</label>
+                        <select class="form-select" @bind="currentSheet"><option value="">Select a sheet</option>@foreach (var sheet in sheetNames) { <option value="@sheet">@sheet</option> }</select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Compare with</label>
+                        <select class="form-select" @bind="previousSheet"><option value="">Select a sheet</option>@foreach (var sheet in sheetNames) { <option value="@sheet">@sheet</option> }</select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end"><button class="btn btn-primary w-100" @onclick="BuildReportAsync" disabled="@busy">Validate</button></div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(error)) { <div class="alert alert-danger">@error</div> }
+    @if (report is not null)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">2. Validation and comparison</h2>
+                <p class="text-muted mb-2">@report.CurrentSheetName compared with @report.PreviousSheetName</p>
+                @foreach (var warning in report.Warnings) { <div class="alert alert-warning py-2">@warning</div> }
+                @if (report.Validations.Count > 0)
+                {
+                    <table class="table table-sm"><thead><tr><th>Project</th><th>Cell</th><th>Metric</th><th>Entered</th><th>Calculated</th><th>Status</th></tr></thead>
+                    <tbody>@foreach (var item in report.Validations) { <tr><td>@item.Project</td><td>@item.Cell</td><td>@item.Metric</td><td>@FormatRate(item.EnteredValue)</td><td>@FormatRate(item.CalculatedValue)</td><td class="text-danger">@item.Message</td></tr> }</tbody></table>
+                }
+                else { <div class="alert alert-success py-2">Coverage and pass rate values agree with their source counts.</div> }
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h2 class="h5">3. Edit narrative</h2>
+                @foreach (var project in report.Projects)
+                {
+                    <div class="row mb-3"><div class="col-md-2 fw-semibold">@project.Current.Project</div><div class="col-md-10"><textarea class="form-control" rows="2" @bind="projectNarratives[project.Current.Project]"></textarea></div></div>
+                }
+                <h3 class="h6 mt-4">Weekly highlights</h3>
+                @for (var index = 0; index < highlightText.Count; index++)
+                { var item = index; <div class="mb-2"><input class="form-control" @bind="highlightText[item]" /></div> }
+                <button class="btn btn-primary" @onclick="BuildPreviewAsync" disabled="@(busy || report.Validations.Count > 0)">Generate preview</button>
+                @if (report.Validations.Count > 0) { <p class="text-warning mt-2">Resolve workbook validation issues before generating a preview.</p> }
+            </div>
+        </div>
+    }
+
+    @if (previewVisible)
+    {
+        <div class="card mb-3 border-primary"><div class="card-body">
+            <h2 class="h5">4. Deck preview</h2>
+            <div class="automation-preview">
+                <div class="preview-title">Test Automation - Weekly Portfolio Status</div>
+                @foreach (var project in report!.Projects) { <div class="preview-row"><strong>@project.Current.Project</strong><span>@FormatRate(project.Current.CalculatedCoverage) coverage</span><span>@FormatRate(project.Current.CalculatedPassRate) pass rate</span><span>@projectNarratives[project.Current.Project]</span></div> }
+                <div class="preview-footer"><strong>Weekly highlights</strong>@foreach (var highlight in highlightText.Where(text => !string.IsNullOrWhiteSpace(text))) { <div>• @highlight</div> }</div>
+            </div>
+            <p class="text-muted mt-2 mb-0">The final PPTX will use the fixed presentation layout. Download generation is the next implementation step.</p>
+        </div></div>
+    }
+</div>
+
+<style>
+    .automation-preview { border: 1px solid #dfe5ea; font-size: .85rem; }
+    .preview-title { background:#0e1d2b; color:#fff; font-size:1.1rem; font-weight:700; padding:.8rem; }
+    .preview-row { display:grid; grid-template-columns: 1.3fr 1fr 1fr 3fr; gap:.75rem; padding:.7rem; border-bottom:1px solid #dfe5ea; }
+    .preview-footer { background:#0e1d2b; color:#fff; padding:.8rem; min-height:5rem; }
+</style>
+
+@code {
+    private byte[]? workbookBytes;
+    private List<string> sheetNames = [];
+    private string currentSheet = string.Empty;
+    private string previousSheet = string.Empty;
+    private AutomationWorkbookReport? report;
+    private Dictionary<string, string> projectNarratives = new(StringComparer.OrdinalIgnoreCase);
+    private List<string> highlightText = [];
+    private string? error;
+    private bool busy;
+    private bool previewVisible;
+
+    private async Task LoadWorkbookAsync(InputFileChangeEventArgs args)
+    {
+        error = null; report = null; previewVisible = false;
+        try
+        {
+            await using var source = args.File.OpenReadStream(10 * 1024 * 1024);
+            await using var copy = new MemoryStream();
+            await source.CopyToAsync(copy);
+            workbookBytes = copy.ToArray();
+            await using var input = new MemoryStream(workbookBytes);
+            sheetNames = (await WorkbookReader.GetWeeklySheetsAsync(input)).ToList();
+            currentSheet = sheetNames.FirstOrDefault() ?? string.Empty;
+            previousSheet = sheetNames.Skip(1).FirstOrDefault() ?? string.Empty;
+        }
+        catch (Exception ex) { error = ex.Message; }
+    }
+
+    private async Task BuildReportAsync()
+    {
+        if (workbookBytes is null || string.IsNullOrWhiteSpace(currentSheet) || string.IsNullOrWhiteSpace(previousSheet)) { error = "Upload a workbook and select both weeks."; return; }
+        busy = true; error = null;
+        try
+        {
+            await using var input = new MemoryStream(workbookBytes);
+            report = await WorkbookReader.ReadAsync(input, new AutomationReportSelection(currentSheet, previousSheet));
+            projectNarratives = report.Projects.ToDictionary(project => project.Current.Project, project => project.Comment, StringComparer.OrdinalIgnoreCase);
+            var insights = await InsightService.BuildAsync(report);
+            highlightText = insights.Highlights.Select(item => item.Text).ToList();
+            while (highlightText.Count < 3) highlightText.Add(string.Empty);
+        }
+        catch (Exception ex) { error = ex.Message; }
+        finally { busy = false; }
+    }
+
+    private Task BuildPreviewAsync() { previewVisible = true; return Task.CompletedTask; }
+    private static string FormatRate(decimal? value) => value.HasValue ? $"{value.Value * 100:0.0}%" : "N/A";
+}
